@@ -1,4 +1,6 @@
 #
+# Madeleine - Ruby Object Prevalence
+#
 # Copyright(c) Anders Bengtsson 2003
 #
 
@@ -20,6 +22,7 @@ module Madeleine
     end
 
     def execute_command(command)
+      verify_command_sane(command)
       @lock.synchronize {
         @logger.store(command)
         execute_without_storing(command)
@@ -70,6 +73,15 @@ module Madeleine
         Dir.mkdir(@directory_name)
       end
     end
+
+    def verify_command_sane(command)
+      if ! command.respond_to?(:execute)
+        raise InvalidCommandException.new("Commands must have an 'execute' method")
+      end
+    end
+  end
+
+  class InvalidCommandException < Exception
   end
 
   #

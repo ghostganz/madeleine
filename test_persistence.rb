@@ -349,6 +349,21 @@ class LoggerTest < Test::Unit::TestCase
   end
 end
 
+class CommandVerificationTest < Test::Unit::TestCase
+
+  def teardown
+#    Dir.delete("foo")
+  end
+
+  def test_broken_command
+    system = :hello
+    target = Madeleine::SnapshotPrevayler.new(system, "foo")
+    assert_raises(Madeleine::InvalidCommandException) do
+      target.execute_command(:not_a_command)
+    end
+  end
+end
+
 
 
 suite = Test::Unit::TestSuite.new("Madeleine")
@@ -358,6 +373,7 @@ suite << LoggerTest.suite
 suite << PersistenceTest.suite
 suite << TimeTest.suite
 suite << TimeOptimizingCommandLogTest.suite
+suite << CommandVerificationTest.suite
 
 require 'test/unit/ui/console/testrunner'
 Test::Unit::UI::Console::TestRunner.run(suite)
