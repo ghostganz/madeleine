@@ -145,8 +145,8 @@ module Madeleine
         ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (o.sysid == restored_obj.sysid)}
         restored_obj
       end
-      def Automatic_marshaller.dump(obj, stream = nil)
-        Thread.current[:system].marshaller.dump(obj, stream)
+      def Automatic_marshaller.dump(obj, io = nil)
+        Thread.current[:system].marshaller.dump(obj, io)
       end
     end
 #
@@ -202,6 +202,7 @@ module Madeleine
           [@myid.to_s, @sysid].pack("A8A30")  # never marshal a prox object in a command, just ref
         end
       end
+
 #
 # Custom marshalling for Marshal - restore a Prox object.
 #
@@ -323,7 +324,7 @@ module Madeleine
     end
 
 
-    class Deserialize #:nodoc:
+    module Deserialize #:nodoc:
 #
 # Detect format of an io stream. Leave it rewound.
 #
