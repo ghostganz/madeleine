@@ -22,7 +22,7 @@ module Madeleine
   #  require 'madeleine'
   #  require 'madeleine/zmarshal'
   #
-  #  marshaller = Madeleine::ZMarshal(YAML)
+  #  marshaller = Madeleine::ZMarshal.new(YAML)
   #  madeleine = SnapshotMadeleine.new("my_example_storage", marshaller) {
   #    SomeExampleApplication.new()
   #  }

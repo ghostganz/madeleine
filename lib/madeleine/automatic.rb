@@ -1,4 +1,5 @@
 require 'yaml'
+require 'madeleine/zmarshal'
 
 module Madeleine
 
@@ -17,9 +18,9 @@ module Madeleine
 # There is also a mechanism for specifying which methods not to intercept calls to by using
 # automatic_read_only, and its opposite automatic_read_write.
 #
-# Should you require it, the snapshots can be stored as yaml, just pass YAML as the second
-# argument to AutomaticSnapshotMadeleine.new.  The system will read either Marshal or YAML at
-# startup.
+# Should you require it, the snapshots can be stored as yaml, and can be compressed.  Just pass 
+# the marshaller you want to use as the second argument to AutomaticSnapshotMadeleine.new.  The system 
+# will automatically detect and read either Marshal, compressed Marshal or YAML at startup.
 #
 # This module is designed to work correctly in the case there are multiple madeleine systems in use by
 # a single program, and is also safe to use with threads.
@@ -343,6 +344,9 @@ module Madeleine
           if (s && s =~ /^\s*---/) # "---" is the yaml header
             YAML.load(io)
           else
+            if (marshaller.class != ZMarshal && c == 31 && c1 == 139) # gzip magic numbers
+              marshaller = ZMarshal.new(marshaller)
+            end
             marshaller.load(io)
           end
         end

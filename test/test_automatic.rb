@@ -364,10 +364,14 @@ class CircularReferenceTest < AutoTest
   end
 end
 
-require 'yaml'
-
 class AutomaticCustomMarshallerTest < AutoTest
   def test_main
+    custom_m(YAML)
+    custom_m(Madeleine::ZMarshal.new)
+    simple_custom_m(Madeleine::ZMarshal.new(YAML))
+  end
+
+  def simple_custom_m(marshaller)
     dir = prevalence_base
     delete_directory(dir)
     @system_bases << dir
@@ -376,56 +380,87 @@ class AutomaticCustomMarshallerTest < AutoTest
     mad_h.take_snapshot
     mad_h.system.yy.w += "d"
     assert_equal("abcd", mad_h.system.yy.w, "Custom marshalling after snapshot+commands with normal marshaller")
-    mad_h.marshaller = YAML
+    mad_h.marshaller = marshaller
     mad_h.system.yy.w += "e"
     assert_equal("abcde", mad_h.system.yy.w, "Custom marshalling after snapshot+commands+change marshaller+commands")
     mad_h.take_snapshot
     mad_h.close
-    File.open(dir + "/000000000000000000002.snapshot", "r") {|f|
-      assert_equal(f.gets, "--- !ruby/object:Madeleine::Automatic::Prox \n", "Custom marshalling marshaller change check")
-    }
+    mad_h = make_system(dir, marshaller) { G.new }
+    assert_equal("abcde", mad_h.system.yy.w, 
+                 "Custom marshalling after snapshot+commands+change marshaller+commands+snapshot+restore")
+    mad_h.system.yy.w += "f"
+    mad_h.close
+    mad_h = make_system(dir, marshaller) { G.new }
+    assert_equal("abcdef", mad_h.system.yy.w, "Custom marshalling snapshot custom+commands+restore")
+    mad_h.close
+  end
+
+  def custom_m(marshaller)
+    dir = prevalence_base
+    delete_directory(dir)
+    @system_bases << dir
+    mad_h = make_system(dir) { G.new }
+    mad_h.system.yy.w = "abc"
+    mad_h.take_snapshot
+    mad_h.system.yy.w += "d"
+    assert_equal("abcd", mad_h.system.yy.w, "Custom marshalling after snapshot+commands with normal marshaller")
+    mad_h.close
+    mad_h = make_system(dir, marshaller) { G.new }
+    assert_equal("abcd", mad_h.system.yy.w, "Custom marshalling after snapshot+commands with normal marshaller, read with custom as marshaller")
+    mad_h.close
+    mad_h = make_system(dir) { G.new }
+    mad_h.marshaller = marshaller
+    mad_h.system.yy.w += "e"
+    assert_equal("abcde", mad_h.system.yy.w, "Custom marshalling after snapshot+commands+change marshaller+commands")
+    mad_h.take_snapshot
+    mad_h.close
+    if (marshaller == YAML)
+      File.open(dir + "/000000000000000000002.snapshot", "r") {|f|
+        assert_equal(f.gets, "--- !ruby/object:Madeleine::Automatic::Prox \n", "Custom marshalling marshaller change check")
+      }
+    end
     mad_h = make_system(dir) { G.new }
     assert_equal("abcde", mad_h.system.yy.w, 
                  "Custom marshalling after snapshot+commands+change marshaller+commands+snapshot+restore with normal marshaller")
     mad_h.system.yy.w += "f"
     mad_h.close
     mad_h = make_system(dir) { G.new }
-    assert_equal("abcdef", mad_h.system.yy.w, "Custom marshalling snapshot yaml+commands+restore normal")
+    assert_equal("abcdef", mad_h.system.yy.w, "Custom marshalling snapshot custom+commands+restore normal")
     mad_h.take_snapshot
     mad_h.close
-    mad_h = make_system(dir, YAML) { G.new }
-    assert_equal("abcdef", mad_h.system.yy.w, "Custom marshalling snapshot+restore yaml")
+    mad_h = make_system(dir, marshaller) { G.new }
+    assert_equal("abcdef", mad_h.system.yy.w, "Custom marshalling snapshot+restore custom")
     mad_h.take_snapshot
     mad_h.system.yy.w += "g"
     mad_h.close
-    mad_h = make_system(dir, YAML) { G.new }
-    assert_equal("abcdefg", mad_h.system.yy.w, "Custom marshalling after restore normal snapshot yaml+commands+restore yaml")
+    mad_h = make_system(dir, marshaller) { G.new }
+    assert_equal("abcdefg", mad_h.system.yy.w, "Custom marshalling after restore normal snapshot custom+commands+restore custom")
     mad_h.system.yy.w = "abc"
     mad_h.close
-    mad_h2 = make_system(dir, YAML) { G.new }
+    mad_h2 = make_system(dir, marshaller) { G.new }
     assert_equal("abc", mad_h2.system.yy.w, "Custom marshalling after commands/restore")
     mad_h2.take_snapshot
     mad_h2.close
-    mad_h3 = make_system(dir, YAML) { G.new }
+    mad_h3 = make_system(dir, marshaller) { G.new }
     assert_equal("abc", mad_h3.system.yy.w, "Custom marshalling after snapshot/restore")
     mad_h3.system.yy.w += "d"
     mad_h3.close
-    mad_h4 = make_system(dir, YAML) { G.new }
+    mad_h4 = make_system(dir, marshaller) { G.new }
     assert_equal("abcd", mad_h4.system.yy.w, "Custom marshalling after snapshot+commands/restore")
     mad_h4.close
-    mad_h = make_system(dir, YAML) { G.new }
+    mad_h = make_system(dir, marshaller) { G.new }
     mad_h.system.yy.w = mad_h.system
     mad_h.close
-    mad_h2 = make_system(dir, YAML) { G.new }
+    mad_h2 = make_system(dir, marshaller) { G.new }
     assert_equal(mad_h2.system, mad_h2.system.yy.w, "Custom marshalling after commands/restore, circular ref")
     mad_h2.take_snapshot
     mad_h2.close
-    mad_h3 = make_system(dir, YAML) { G.new }
+    mad_h3 = make_system(dir, marshaller) { G.new }
     assert_equal(mad_h3.system, mad_h3.system.yy.w, "Custom marshalling after snapshot/restore, circular ref")
     mad_h3.system.yy.w = "sss"
     mad_h3.system.yy.w = mad_h3.system
     mad_h3.close
-    mad_h4 = make_system(dir, YAML) { G.new }
+    mad_h4 = make_system(dir, marshaller) { G.new }
     assert_equal(mad_h4.system, mad_h4.system.yy.w, "Custom marshalling after snapshot+commands/restore, circular ref")
     mad_h4.close
   end
