@@ -1,5 +1,6 @@
 require 'yaml'
 require 'madeleine/zmarshal'
+require 'soap/marshal'
 
 module Madeleine
 
@@ -7,7 +8,7 @@ module Madeleine
 #
 # Author::    Stephen Sykes <ruby@stephensykes.com>
 # Copyright:: Copyright (C) 2003-2004
-# Version::   0.4
+# Version::   0.5
 #
 # This module provides a way of automatically generating command objects for madeleine to
 # store.  It works by making a proxy object for all objects of any classes in which it is included.
@@ -21,7 +22,7 @@ module Madeleine
 # Should you require it, the snapshots can be stored as yaml, and can be compressed.  Just pass 
 # the marshaller you want to use as the second argument to AutomaticSnapshotMadeleine.new.  
 # If the passed marshaller did not successfully deserialize the latest snapshot, the system 
-# will try to automatically detect and read either Marshal, YAML, or compressed Marshal or YAML.
+# will try to automatically detect and read either Marshal, YAML, SOAP, or compressed Marshal or YAML.
 #
 # This module is designed to work correctly in the case there are multiple madeleine systems in use by
 # a single program, and is also safe to use with threads.
@@ -76,7 +77,7 @@ module Madeleine
           @@read_only_methods = []
 
           def new(*args, &block)
-            Proxy_stub.new(_old_new(*args, &block))
+            Automatic_proxy.new(_old_new(*args, &block))
           end
 #
 # Called when a method added - remember symbol if read only 
@@ -141,16 +142,16 @@ module Madeleine
       def Automatic_marshaller.load(io)
         Thread.current[:system].automatic_objects = Deserialize.load(io, Thread.current[:system].marshaller)
         Thread.current[:system].add_system
-        Thread.current[:system].automatic_objects.root_stub
+        Thread.current[:system].automatic_objects.root_proxy
       end
       def Automatic_marshaller.dump(obj, io = nil)
         Thread.current[:system].marshaller.dump(Thread.current[:system].automatic_objects, io)
       end
     end
 #
-# A Prox object is generated and returned by Interceptor each time a system object is created.
+# A proxy object is generated and returned by Interceptor each time a system object is created.
 #
-    class Proxy_stub #:nodoc:
+    class Automatic_proxy #:nodoc:
       def initialize(client_object)
         if (client_object)
           raise "App object created outside of app" unless Thread.current[:system]
@@ -186,7 +187,7 @@ module Madeleine
     end
 
     class Automatic_objects #:nodoc:
-      attr_accessor :root_stub
+      attr_accessor :root_proxy
       attr_reader :sysid, :client_objects
       def initialize
         @sysid = Time.now.to_f.to_s + Thread.current.object_id.to_s # Gererate a new sysid
@@ -221,7 +222,7 @@ module Madeleine
         add_system
         begin
           @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
-          @automatic_objects.root_stub = @persister.system
+          @automatic_objects.root_proxy = @persister.system
         ensure
           Thread.current[:system] = false
         end
@@ -275,13 +276,21 @@ module Madeleine
           ZMarshal
         else
           while (s = io.gets)
-            break if (s !~ /^\s*#/ && s !~ /^\s*$/) # ignore blank and comment lines
+            break if (s !~ /^\s*$/) # ignore blank lines
           end
           io.rewind
-          if (s && s =~ /^\s*---/) # "---" is the yaml header
-            YAML
+          if (s && s =~ /^\s*<\?[xX][mM][lL]/) # "<?xml" begins an xml serialization
+            SOAP::Marshal
           else
-            nil # failed to detect
+            while (s = io.gets)
+              break if (s !~ /^\s*#/ && s !~ /^\s*$/) # ignore blank and comment lines
+            end
+            io.rewind
+            if (s && s =~ /^\s*---/) # "---" is the yaml header
+              YAML
+            else
+              nil # failed to detect
+            end
           end
         end
       end
@@ -302,6 +311,12 @@ module Madeleine
             zio.finish
             io.rewind
             if (detected_zmarshaller)
+              if (detected_zmarshaller == SOAP::Marshal)
+                zio = Zlib::GzipReader.new(io)
+                zio.readlines.each {|l| print l}
+                zio.finish
+                io.rewind
+              end
               ZMarshal.new(detected_zmarshaller).load(io)
             else
               raise e
