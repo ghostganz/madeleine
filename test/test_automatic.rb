@@ -103,6 +103,22 @@ class K
   end
 end  
 
+class L
+  include Madeleine::Automatic::Interceptor
+  attr_reader :x
+  def initialize
+    @x = M.new(self)
+  end
+end
+
+class M
+  include Madeleine::Automatic::Interceptor
+  attr_reader :yy
+  def initialize(yy)
+    @yy = yy
+  end
+end
+
 class AutoTest < Test::Unit::TestCase
 
   def persister
@@ -361,6 +377,15 @@ class CircularReferenceTest < AutoTest
     mad_g4 = make_system(prevalence_base) { G.new }
     assert_equal(1, mad_g4.system.yy.w.yy.w.yy.w.a, "Circular reference after snapshot+commands/restore")
     mad_g4.close
+# The following tests would fail, cannot pass self (from class L to class M during init)
+# self is the proxied object itself, not the Prox object it needs to be
+    mad_l = create_new_system(L, prevalence_base)
+#    assert_equal(mad_l.system, mad_l.system.x.yy, "Circular ref before snapshot/restore, passed self")
+    mad_l.take_snapshot
+    mad_l.close
+    mad_l = make_system(prevalence_base) { L.new }
+#    assert_equal(mad_l.system, mad_l.system.x.yy, "Circular ref after snapshot/restore, passed self")
+    mad_l.close
   end
 end
 
