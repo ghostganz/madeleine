@@ -7,6 +7,7 @@
 #
 
 require 'madeleine'
+require 'test/unit'
 
 class AddingSystem
   attr_reader :total
@@ -33,24 +34,15 @@ class Addition
 end
 
 
-class Test
+class PersistenceTest < Test::Unit::TestCase
 
-  def verify_true(condition, message)
-    unless condition
-      raise message
-    end
-  end
-end
-
-class PersistenceTest < Test
-
-  def initialize
+  def setup
     @prevaylers = []
     @prevayler = nil
   end
 
   def verify(expected_total)
-    compare(prevalence_system().total(), expected_total, "Total");
+    assert_equal(expected_total, prevalence_system().total(), "Total")
   end
 
   def prevalence_system
@@ -74,7 +66,7 @@ class PersistenceTest < Test
     Dir.foreach(directory_name) {|file_name|
       next if file_name == '.'
       next if file_name == '..'
-      verify_true(File.delete(directory_name + File::SEPARATOR + file_name) == 1,
+      assert(File.delete(directory_name + File::SEPARATOR + file_name) == 1,
                   "Unable to delete #{file_name}")
     }
   end
@@ -91,12 +83,7 @@ class PersistenceTest < Test
 
   def add(value, expected_total)
     total = @prevayler.execute_command(Addition.new(value))
-    compare(total, expected_total, "Total");
-  end
-
-  def compare(observed, expected, message)
-    verify_true(observed == expected,
-                "#{message}: #{observed}   Expected: #{expected}")
+    assert_equal(expected_total, total, "Total")
   end
 
   def verify_snapshots(expected_count)
@@ -106,7 +93,7 @@ class PersistenceTest < Test
         count += 1
       end
     }
-    compare(count, expected_count, "snapshots")
+    assert_equal(expected_count, count, "snapshots")
   end
 
   def test_main
@@ -161,6 +148,5 @@ class PersistenceTest < Test
 end
 
 
-test = PersistenceTest.new
-test.test_main
-
+require 'test/unit/ui/console/testrunner'
+Test::Unit::UI::Console::TestRunner.run(PersistenceTest)
