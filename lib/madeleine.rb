@@ -187,7 +187,6 @@ module Madeleine
       @directory_name = directory_name
       @log_factory = log_factory
       @log = nil
-      @lock = Mutex.new
     end
 
     def reset
@@ -196,10 +195,8 @@ module Madeleine
     end
 
     def store(command)
-      @lock.synchronize do
-        if @log.nil?
-          open_new_log
-        end
+      if @log.nil?
+        open_new_log
       end
       @log.store(command)
     end
