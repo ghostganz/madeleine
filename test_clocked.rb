@@ -2,10 +2,22 @@
 require 'madeleine/clock'
 
 
-class ClockedAddingSystem < AddingSystem
+class ClockedAddingSystem
   include Madeleine::Clock::ClockedSystem
+
+  attr_reader :total
+
+  def initialize
+    @total = 0
+  end
+
+  def add(value)
+    @total += value
+    @total
+  end
 end
 
+require 'test_persistence'
 
 class ClockedPersistenceTest < PersistenceTest
 

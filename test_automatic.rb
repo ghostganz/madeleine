@@ -1,7 +1,6 @@
 #!/usr/local/bin/ruby -w
 #
 # Copyright(c) 2003 Stephen Sykes
-# &
 # Copyright(c) 2003 Anders Bengtsson
 #
 

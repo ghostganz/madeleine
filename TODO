@@ -1,5 +1,7 @@
 
-* Access to global lock from client code
+* ClockCommand
+* execute_query()
+* Integrate batched-writes in SnapshotMadeleine
 * More sample code
 * More documentation
 * Get it working on Windows

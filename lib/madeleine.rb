@@ -62,7 +62,7 @@ module Madeleine
     # <li><code>aCommand</code> - The command to execute on the system.
     def execute_command(command)
       verify_command_sane(command)
-      @lock.synchronize {
+      synchronize {
         raise "closed" if @closed
         @logger.store(command)
         execute_without_storing(command)
@@ -85,7 +85,7 @@ module Madeleine
     #    end
     #  }
     def take_snapshot
-      @lock.synchronize {
+      synchronize {
         @logger.close
         Snapshot.new(@directory_name, system, @marshaller).take
         @logger.reset
@@ -97,7 +97,7 @@ module Madeleine
     # The log file is closed and no new commands can be received
     # by this Madeleine.
     def close
-      @lock.synchronize {
+      synchronize {
         @logger.close
         @closed = true
       }
@@ -105,8 +105,12 @@ module Madeleine
 
     private
 
+    def synchronize(&block)
+      @lock.synchronize(&block)
+    end
+
     def create_lock
-      Mutex.new
+      Sync.new
     end
 
     def create_logger(directory_name, log_factory)
