@@ -1,5 +1,5 @@
 
-
+    * Added a RubyGem specification
     * Re-designed initialization (but still backward-compatible)
     * Bug fix: Fixed use of finalized object's id in AutomaticSnapshotMadeleine
 
