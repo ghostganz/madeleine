@@ -7,7 +7,7 @@ require 'yaml'
 class ZMarshalTest < Test::Unit::TestCase
 
   def test_full_circle_marshal
-    target = ZMarshal.new(Marshal)
+    target = Madeleine::ZMarshal.new(Marshal)
     object = ["foo", "bar"]
     stream = StringIO.new
 
@@ -19,7 +19,7 @@ class ZMarshalTest < Test::Unit::TestCase
   end
 
   def test_full_circle_yaml
-    target = ZMarshal.new(YAML)
+    target = Madeleine::ZMarshal.new(YAML)
     object = ["foo", "bar"]
     stream = StringIO.new
 
@@ -31,7 +31,7 @@ class ZMarshalTest < Test::Unit::TestCase
   end
 
   def test_compression
-    target = ZMarshal.new(Marshal)
+    target = Madeleine::ZMarshal.new(Marshal)
     object = "x" * 1000
 
     stream = StringIO.new

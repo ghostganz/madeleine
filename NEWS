@@ -1,4 +1,5 @@
 
+    * Snapshot compression with Madeleine::ZMarshal
     * YAML snapshots supported while using automatic commands
     * Read-only methods for automatic commands
 

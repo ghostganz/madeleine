@@ -144,7 +144,7 @@ module Madeleine
 # After we have done a restore, the ObjectSpace is searched for instances of Prox to
 # add new objects to the list in AutomaticSnapshotMadeleine
 #
-    class Automatic_marshaller
+    class Automatic_marshaller #:nodoc:
       def Automatic_marshaller.load(io)
         restored_obj = Deserialize.load(io, Thread.current[:system].marshaller)
         ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (o.sysid == restored_obj.sysid)}
@@ -157,7 +157,7 @@ module Madeleine
 #
 # A Prox object is generated and returned by Interceptor each time a system object is created.
 #
-    class Prox
+    class Prox #:nodoc:
       attr_accessor :thing, :myid, :sysid
       
       def initialize(thing)
@@ -324,7 +324,7 @@ module Madeleine
     end
 
 
-    class Deserialize
+    class Deserialize #:nodoc:
 #
 # Detect marshal format, and return deserialized object using the right marshaller
 # If detection didn't work, use the marshaller given in the optional 2nd argument

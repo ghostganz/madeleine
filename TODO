@@ -1,7 +1,7 @@
 
 * Rolling snapshots, with age limit
-* Compressed snapshots
-* Full support for YAML snapshots
+- Compressed snapshots
+- Full support for YAML snapshots
 * SOAP marshalling?
 * Configurable log marshaller (or use the snapshot marshaller?)
 

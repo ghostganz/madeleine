@@ -6,6 +6,8 @@
 #
 # Usage:
 #
+#  require 'madeleine'
+#
 #  madeleine = SnapshotMadeleine.new("my_example_storage") {
 #    SomeExampleApplication.new()
 #  }
