@@ -65,7 +65,7 @@ end
 
 
 system = Dictionary.new
-madeleine = Madeleine::SnapshotPrevayler.new(system, "dictionary-base")
+madeleine = Madeleine::SnapshotMadeleine.new(system, "dictionary-base")
 
 Thread.new(madeleine) {
   puts "Taking snapshot every 30 seconds."

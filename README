@@ -19,6 +19,22 @@ Installation:
 
     [From the documentation of Minero Aoki's 'install.rb']
 
+Usage:
+
+    require 'madeleine'
+
+    # Create an application as a prevalent system
+
+    madeleine = Madeleine::SnapshotMadeleine.new(SomeExampleApplication.new(),
+                                                 "my_example_storage")
+
+    # Do modifications of the system by sending commands through
+    # the Madeleine instance. A command is an object with a suitable
+    # "execute(system)" method.
+
+    madeleine.execute_command(command)
+
+
 Requirements:
 
     * Ruby 1.8

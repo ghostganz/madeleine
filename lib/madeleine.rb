@@ -10,7 +10,7 @@ module Madeleine
 
   MADELEINE_VERSION = "0.0"
 
-  class SnapshotPrevayler
+  class SnapshotMadeleine
     attr_reader :system
 
     def initialize(new_system, directory_name, log_factory=DefaultLogFactory.new)

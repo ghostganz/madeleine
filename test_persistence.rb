@@ -41,8 +41,8 @@ end
 class PersistenceTest < Test::Unit::TestCase
 
   def setup
-    @prevaylers = []
-    @prevayler = nil
+    @madeleines = []
+    @madeleine = nil
   end
 
   def teardown
@@ -55,7 +55,7 @@ class PersistenceTest < Test::Unit::TestCase
   end
 
   def prevalence_system
-    @prevayler.system
+    @madeleine.system
   end
 
   def prevalence_base
@@ -63,10 +63,10 @@ class PersistenceTest < Test::Unit::TestCase
   end
 
   def clear_prevalence_base
-    @prevaylers.each {|prevayler|
-      prevayler.take_snapshot
+    @madeleines.each {|madeleine|
+      madeleine.take_snapshot
     }
-    @prevaylers.clear
+    @madeleines.clear
     delete_prevalence_files(prevalence_base())
   end
 
@@ -81,17 +81,17 @@ class PersistenceTest < Test::Unit::TestCase
   end
 
   def crash_recover
-    @prevayler =
-      Madeleine::SnapshotPrevayler.new(AddingSystem.new, prevalence_base())
-    @prevaylers << @prevayler
+    @madeleine =
+      Madeleine::SnapshotMadeleine.new(AddingSystem.new, prevalence_base())
+    @madeleines << @madeleine
   end
 
   def snapshot
-    @prevayler.take_snapshot
+    @madeleine.take_snapshot
   end
 
   def add(value, expected_total)
-    total = @prevayler.execute_command(Addition.new(value))
+    total = @madeleine.execute_command(Addition.new(value))
     assert_equal(expected_total, total, "Total")
   end
 
@@ -357,7 +357,7 @@ class CommandVerificationTest < Test::Unit::TestCase
 
   def test_broken_command
     system = :hello
-    target = Madeleine::SnapshotPrevayler.new(system, "foo")
+    target = Madeleine::SnapshotMadeleine.new(system, "foo")
     assert_raises(Madeleine::InvalidCommandException) do
       target.execute_command(:not_a_command)
     end

@@ -24,8 +24,8 @@ module Madeleine
 
     class TimeActor
 
-      def self.launch(prevayler, delay=0.1)
-        result = new(prevayler, delay)
+      def self.launch(madeleine, delay=0.1)
+        result = new(madeleine, delay)
         result
       end
 
@@ -37,8 +37,8 @@ module Madeleine
 
       private
 
-      def initialize(prevayler, delay)
-        @prevayler = prevayler
+      def initialize(madeleine, delay)
+        @madeleine = madeleine
         @is_destroyed = false
         send_tick
         @thread = Thread.new {
@@ -50,7 +50,7 @@ module Madeleine
       end
 
       def send_tick
-        @prevayler.execute_command(Tick.new(Time.now))
+        @madeleine.execute_command(Tick.new(Time.now))
       end
     end
 

@@ -43,8 +43,8 @@ root = TkRoot.new() { title "Madeleine Painter" }
 canvas = Canvas.new(root)
 canvas.pack
 
-$madeleine = Madeleine::SnapshotPrevayler.new(Painter.new(canvas),
-                                             "painter-demo")
+$madeleine = Madeleine::SnapshotMadeleine.new(Painter.new(canvas),
+                                              "painter-demo")
 
 canvas.bind("1",
             proc {|x, y|
