@@ -66,10 +66,13 @@ License:
 
 Credits:
 
-    Madeleine was written by Anders Bengtsson (prevalence core
-    implementation) and Stephen Sykes (automatic commands implementation),
-    with the help of Johan Lind (finding bugs, feedback), Håkan Råberg
-    (testing) and Jon Tirsén (design feedback).
+    Anders Bengtsson   -   Prevalence core impl.
+    Stephen Sykes      -   Automatic commands impl.
+
+    With the help of patches, testing and feedback from:
+
+    Steve Conover, David Heinemeier Hansson, Johan Lind, Håkan Råberg,
+    IIMA Susumu, Martin Tampe and Jon Tirsén
 
     Thanks to Klaus Wuestefeld and the Prevayler developers for the
     model of this software; to Minero Aoki for the installer; to Matz and
