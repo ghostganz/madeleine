@@ -64,38 +64,6 @@ class NumberedFileTest < Test::Unit::TestCase
 end
 
 
-class CommandLogTest < Test::Unit::TestCase
-
-  def setup
-    @target = Madeleine::CommandLog.new(".")
-  end
-
-  def teardown
-    @target.close
-    File.delete(expected_file_name)
-  end
-
-  def test_logging
-    f = open(expected_file_name, 'r')
-    assert(f.stat.file?)
-    @target.store(Addition.new(7))
-    read_command = Marshal.load(f)
-    assert_equal(Addition, read_command.class)
-    assert_equal(7, read_command.value)
-    assert_equal(f.stat.size, f.tell)
-    @target.store(Addition.new(3))
-    read_command = Marshal.load(f)
-    assert_equal(3, read_command.value)
-    assert_equal(f.stat.size, f.tell)
-    f.close
-  end
-
-  def expected_file_name
-    "000000000000000000001.command_log"
-  end
-end
-
-
 class LoggerTest < Test::Unit::TestCase
   include TestUtils
 
@@ -184,7 +152,7 @@ end
 
 class ErrorRaisingCommand
   def execute(system)
-    raise "woo-hoo"
+    raise "this is an exception from a command"
   end
 end
 
@@ -321,56 +289,11 @@ class SharedLockQueryTest < Test::Unit::TestCase
   end
 end
 
-
-class ExecuterTest < Test::Unit::TestCase
-
-  def test_executer
-    system = Object.new
-    command = self
-    executer = Madeleine::Executer.new(system)
-    @executed_with = nil
-    executer.execute(command)
-    assert_same(system, @executed_with)
-  end
-
-  # Self-shunt
-  def execute(system)
-    @executed_with = system
-  end
-
-  def test_execute_with_exception
-    system = Object.new
-    command = Object.new
-    def command.execute(system)
-      raise "hell"
-    end
-    executer = Madeleine::Executer.new(system)
-    assert_raises(RuntimeError) {
-      executer.execute(command)
-    }
-  end
-
-  def test_exception_in_recovery
-    system = Object.new
-    command = Object.new
-    def command.execute(system)
-      raise "hell"
-    end
-    executer = Madeleine::Executer.new(system)
-    executer.recovery {
-      executer.execute(command)
-    }
-    assert_raises(RuntimeError) {
-      executer.execute(command)
-    }
-  end
-end
-
-
 suite = Test::Unit::TestSuite.new("Madeleine")
 
 suite << SnapshotMadeleineTest.suite
 suite << NumberedFileTest.suite
+require 'test_command_log'
 suite << CommandLogTest.suite
 suite << LoggerTest.suite
 suite << CommandVerificationTest.suite
@@ -379,6 +302,7 @@ suite << ErrorHandlingTest.suite
 suite << QueryTest.suite
 suite << TimeOptimizingLoggerTest.suite
 suite << SharedLockQueryTest.suite
+require 'test_executer'
 suite << ExecuterTest.suite
 
 require 'test_clocked'
