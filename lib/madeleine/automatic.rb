@@ -131,6 +131,23 @@ module Madeleine
       end
     end
 #
+# This is a little class to pass to SnapshotMadeleine.  This is used for snapshots only. 
+# It acts as the marshaller, and just passes marshalling requests on to the user specified
+# marshaller.  This defaults to Marshal, but could be YAML or another.
+# After we have done a restore, the ObjectSpace is searched for instances of Prox to
+# add new objects to the list in AutomaticSnapshotMadeleine
+#
+    class Automatic_marshaller
+      def Automatic_marshaller.load(arg)
+        restored_obj = Thread.current[:system].marshaller.load(arg)
+        ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (o.sysid == restored_obj.sysid)}
+        restored_obj
+      end
+      def Automatic_marshaller.dump(obj, stream = nil)
+        Thread.current[:system].marshaller.dump(obj, stream)
+      end
+    end
+#
 # A Prox object is generated and returned by Interceptor each time a system object is created.
 #
     class Prox
@@ -218,7 +235,7 @@ module Madeleine
         AutomaticSnapshotMadeleine.register_sysid(@sysid) # this sysid may be overridden
         @marshaller = marshaller # until attrb
         begin
-          @persister = persister.new(directory_name, marshaller, &new_system_block)
+          @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
           AutomaticSnapshotMadeleine.register_sysid(@sysid) # needed if there were no commands
         ensure
           Thread.current[:system] = false
