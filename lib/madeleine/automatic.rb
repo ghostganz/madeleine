@@ -52,8 +52,8 @@ module Madeleine
 #  mad = AutomaticSnapshotMadeleine.new("storage_directory") { A.new(param1, ...) }
 #
 #  mad.system.some_method(paramA, ...) # logged as a command by madeleine
-#  print mad.foo                       # not logged
-#  print mad.bigfoo                    # not logged
+#  print mad.system.foo                # not logged
+#  print mad.system.bigfoo             # not logged
 #  mad.take_snapshot
 #
 
