@@ -197,10 +197,6 @@ module Madeleine
         x
       end
 
-      def to_yaml_type # Doesn't seem to be needed?
-        "madeleine,2004/Prox"
-      end
-
       def to_yaml(opts = {})
         YAML.quick_emit(nil, opts) {|out|
           out.map("!madeleine,2004/Prox") {|map|
@@ -248,7 +244,6 @@ module Madeleine
         AutomaticSnapshotMadeleine.register_sysid(@sysid) # this sysid may be overridden
         @marshaller = marshaller # until attrb
         begin
-          # @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
           @persister = persister.new(directory_name, marshaller, &new_system_block)
           AutomaticSnapshotMadeleine.register_sysid(@sysid) # needed if there were no commands
         ensure
