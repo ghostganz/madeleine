@@ -117,7 +117,7 @@ module Madeleine
       attr_reader :list, :marshaller
       
       def initialize(directory_name, marshaller=nil, &new_system_block)
-        @sysid ||= Time.now.to_f.to_s + Thread.current.id.to_s # Gererate a new sysid
+        @sysid ||= Time.now.to_f.to_s + Thread.current.object_id.to_s # Gererate a new sysid
         @obj_count = 0                                         # This sysid will be used only if new object is 
         @list = {}                                             # taken by madeleine
         Thread.current[:syscont] = self   # also ensures that no commands are generated during restore
@@ -135,7 +135,7 @@ module Madeleine
       end
 
       def add(proxo)  # add a proxy object to the list
-        @list[@obj_count += 1] = proxo.id
+        @list[@obj_count += 1] = proxo.object_id
         @obj_count
       end
       
@@ -143,7 +143,7 @@ module Madeleine
         if (@list[proxo.myid] && proxo.sysid == listid2ref(proxo.myid).sysid) # if we already have this system's object, use that
           proxo = listid2ref(proxo.myid)
         else
-          @list[proxo.myid] = proxo.id
+          @list[proxo.myid] = proxo.object_id
           @obj_count = proxo.myid if (@obj_count < proxo.myid)
         end
         @sysid = proxo.sysid # to be sure to have the correct sysid in the container
