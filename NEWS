@@ -1,4 +1,6 @@
 
+Madeleine 0.4 (July 4, 2003):
+
     * Deprecated ClockedSnapshotMadeleine
     * Added execute_query()
     * API documentation in RDoc format
