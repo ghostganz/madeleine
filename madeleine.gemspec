@@ -3,7 +3,7 @@ require 'rubygems'
 
 spec = Gem::Specification.new do |s|
   s.name = 'madeleine'
-  s.version = '0.6.1'
+  s.version = '0.7'
   s.platform = Gem::Platform::RUBY
   s.summary = "Madeleine is a Ruby implementation of Object Prevalence"
   s.require_path = 'lib'

@@ -18,7 +18,7 @@ module Madeleine
   require 'thread'
   require 'sync'
 
-  MADELEINE_VERSION = "0.6.1"
+  MADELEINE_VERSION = "0.7"
 
   class SnapshotMadeleine
 
