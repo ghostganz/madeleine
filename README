@@ -4,7 +4,7 @@ persistence of business objects using command logging and complete
 system snapshots.
 
 Madeleine's design is based on Prevayler, the original Java
-implementation of object prevalence.
+prevalence layer.
 
 Learn more about object prevalence at <http://www.prevayler.org/>.
 
@@ -23,7 +23,10 @@ Requirements:
 
     * Ruby 1.8
 
-Known bugs:
+    Additionaly, the sample code also uses ruby/tk and Distributed
+    Ruby (DRb).
+
+Known problems:
 
     * Not yet confirmed if it works in Windows.
 

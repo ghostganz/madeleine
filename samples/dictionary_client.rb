@@ -1,7 +1,7 @@
 #
-# Client for dictionary_server.rb
+# Dictionary client
 #
-# See dictionary_server.rb for more details.
+# See dictionary_server.rb for details
 #
 
 require 'drb'

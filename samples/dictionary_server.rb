@@ -2,7 +2,7 @@
 # A dictionary server using Distributed Ruby (DRb).
 #
 # All modifications to the dictionary are done as commands,
-# while read-only queries like 'lookup' can be done directly.
+# while read-only queries (i.e 'lookup') are done directly.
 #
 # First launch this server in the background, then use
 # dictionary_client.rb to look up and add items to the
