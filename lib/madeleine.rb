@@ -6,7 +6,7 @@
 
 require 'thread'
 require 'sync'
-
+#require '../rwlock'
 
 module Madeleine
 
@@ -20,7 +20,7 @@ module Madeleine
       @marshaller = marshaller
       @in_recovery = false
       @closed = false
-      @lock = Sync.new
+      @lock = create_lock
       ensure_directory_exists
       recover_system(new_system_block)
       @logger = create_logger(directory_name, log_factory)
@@ -28,7 +28,7 @@ module Madeleine
 
     def execute_command(command)
       verify_command_sane(command)
-      @lock.sync_synchronize {
+      @lock.synchronize {
         raise "closed" if @closed
         @logger.store(command)
         execute_without_storing(command)
@@ -36,7 +36,7 @@ module Madeleine
     end
 
     def take_snapshot
-      @lock.sync_synchronize {
+      @lock.synchronize {
         @logger.close
         Snapshot.new(@directory_name, system, @marshaller).take
         @logger.reset
@@ -44,13 +44,17 @@ module Madeleine
     end
 
     def close
-      @lock.sync_synchronize {
+      @lock.synchronize {
         @logger.close
         @closed = true
       }
     end
 
     private
+
+    def create_lock
+      Mutex.new
+    end
 
     def create_logger(directory_name, log_factory)
       Logger.new(directory_name, log_factory)
