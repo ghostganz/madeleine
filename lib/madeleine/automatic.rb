@@ -1,5 +1,6 @@
 require 'yaml'
 require 'madeleine/zmarshal'
+require 'soap/marshal'
 
 module Madeleine
 
@@ -338,13 +339,21 @@ module Madeleine
           ZMarshal
         else
           while (s = io.gets)
-            break if (s !~ /^\s*#/ && s !~ /^\s*$/) # ignore blank and comment lines
+            break if (s !~ /^\s*$/) # ignore blank lines
           end
           io.rewind
-          if (s && s =~ /^\s*---/) # "---" is the yaml header
-            YAML
+          if (s && s =~ /^\s*<\?xml/) # "<?xml" begins an xml serialization
+            SOAP::Marshal
           else
-            nil # failed to detect
+            while (s = io.gets)
+              break if (s !~ /^\s*#/ && s !~ /^\s*$/) # ignore blank and comment lines
+            end
+            io.rewind
+            if (s && s =~ /^\s*---/) # "---" is the yaml header
+              YAML
+            else
+              nil # failed to detect
+            end
           end
         end
       end

@@ -367,6 +367,7 @@ end
 class AutomaticCustomMarshallerTest < AutoTest
   def test_main
     custom_m(YAML)
+    custom_m(SOAP::Marshal)
     custom_m(Madeleine::ZMarshal.new)
     custom_m(Madeleine::ZMarshal.new(YAML))
   end
@@ -395,7 +396,7 @@ class AutomaticCustomMarshallerTest < AutoTest
         assert_equal(f.gets, "--- !ruby/object:Madeleine::Automatic::Prox \n", "Custom marshalling marshaller change check")
       }
     end
-    mad_h = make_system(dir) { G.new }
+    mad_h = make_system(dir, marshaller) { G.new }
     assert_equal("abcde", mad_h.system.yy.w, 
                  "Custom marshalling after snapshot+commands+change marshaller+commands+snapshot+restore with normal marshaller")
     mad_h.system.yy.w += "f"
