@@ -118,3 +118,5 @@ module Madeleine
     end
   end
 end
+
+ClockedSnapshotMadeleine = Madeleine::Clock::ClockedSnapshotMadeleine

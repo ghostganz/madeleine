@@ -10,7 +10,7 @@ end
 class ClockedPersistenceTest < PersistenceTest
 
   def create_madeleine
-    Madeleine::Clock::ClockedSnapshotMadeleine.new(prevalence_base()) {
+    ClockedSnapshotMadeleine.new(prevalence_base()) {
       ClockedAddingSystem.new
     }
   end
@@ -152,7 +152,7 @@ class ClockedCustomMarshallerTest < CustomMarshallerTest
   end
 
   def madeleine_class
-    Madeleine::Clock::ClockedSnapshotMadeleine
+    ClockedSnapshotMadeleine
   end
 end
 
