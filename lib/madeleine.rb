@@ -25,7 +25,7 @@ module Madeleine
     # The prevalent system
     attr_reader :system
 
-    # Creates a new Madeleine instance. If there is a snapshot available
+    # Creates a new SnapshotMadeleine instance. If there is a snapshot available
     # then the system will be created from that, otherwise
     # <tt>new_system</tt> will be used. The state of the system will
     # then be restored from the command logs.
@@ -37,12 +37,12 @@ module Madeleine
     # must always use the same marshaller for a system (unless you convert
     # your snapshot files manually).
     #
-    # * <tt>new_system</tt> - New system to use if no stored system was found.
     # * <tt>directory_name</tt> - Storage directory to use. Will be created if needed.
     # * <tt>snapshot_marshaller</tt> - Marshaller to use for system snapshots. (Optional)
-    def initialize(directory_name, marshaller=Marshal, &new_system_block)
+    # * <tt>new_system_block</tt> - Block to create a new system (if no stored system was found).
+    def initialize(directory_name, snapshot_marshaller=Marshal, &new_system_block)
       @directory_name = directory_name
-      @marshaller = marshaller
+      @marshaller = snapshot_marshaller
       @in_recovery = false
       @closed = false
       @lock = create_lock
@@ -51,7 +51,7 @@ module Madeleine
       @logger = create_logger(directory_name, log_factory)
     end
 
-    # Execute a command with the prevalent system.
+    # Execute a command on the prevalent system.
     #
     # Commands must have a method <tt>execute(aSystem)</tt>.
     # Otherwise an error, <tt>Madeleine::InvalidCommandException</tt>,
@@ -59,7 +59,7 @@ module Madeleine
     #
     # The return value from the command's <tt>execute</tt> method is returned.
     #
-    # * <tt>aCommand</tt> - The command to execute on the system.
+    # * <tt>command</tt> - The command to execute on the system.
     def execute_command(command)
       verify_command_sane(command)
       synchronize {
@@ -95,7 +95,7 @@ module Madeleine
     # Close the system.
     #
     # The log file is closed and no new commands can be received
-    # by this Madeleine.
+    # by this SnapshotMadeleine.
     def close
       synchronize {
         @logger.close
