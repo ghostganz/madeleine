@@ -20,7 +20,6 @@ require 'drb'
 
 
 class Dictionary
-
   def initialize
     @data = {}
   end
@@ -36,13 +35,23 @@ end
 
 
 class Addition
-
   def initialize(key, value)
     @key, @value = key, value
   end
 
   def execute(system)
     system.add(@key, @value)
+  end
+end
+
+
+class Lookup
+  def initialize(key)
+    @key = key
+  end
+
+  def execute(system)
+    system.lookup(@key)
   end
 end
 
@@ -61,15 +70,15 @@ class DictionaryServer
   end
 
   def lookup(key)
-    # A lookup is a read-only operation, so we can do it directly
-    # on the system. We could have done this as a command too, if
-    # we had wanted to.
-    @dictionary.lookup(key)
+    # A lookup is a read-only operation, so we can do it as a non-logged
+    # query. If we weren't worried about concurrency problems we could
+    # have just called @dictionary.lookup(key) directly instead.
+    @madeleine.execute_query(Lookup.new(key))
   end
 end
 
 
-madeleine = Madeleine::SnapshotMadeleine.new("dictionary-base") { Dictionary.new }
+madeleine = SnapshotMadeleine.new("dictionary-base") { Dictionary.new }
 
 Thread.new(madeleine) {
   puts "Taking snapshot every 30 seconds."

@@ -18,6 +18,11 @@ module Madeleine
   require 'thread'
   require 'sync'
 
+  module Clock
+    class Tick
+    end
+  end
+
   MADELEINE_VERSION = "0.4"
 
   class SnapshotMadeleine

@@ -8,7 +8,7 @@ module Madeleine
   module Clock
 
     # Deprecated. Use SnapshotMadeleine instead.
-    class ClockedSnapshotMadeleine < SnapshotMadeleine
+    class ClockedSnapshotMadeleine < ::Madeleine::SnapshotMadeleine
     end
 
     # Let your system extend this module if you need to access the
@@ -88,7 +88,7 @@ module Madeleine
     #
 
     # Deprecated. Merged into default implementation.
-    class TimeOptimizingLogger < Logger
+    class TimeOptimizingLogger < ::Madeleine::Logger
     end
 
     class Tick #:nodoc:
