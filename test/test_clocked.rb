@@ -67,7 +67,7 @@ class TimeTest < Test::Unit::TestCase
 
   # Self-shunt (clock)
   def forward_to(time)
-    if time <= @last_time
+    if time < @last_time
       raise "non-monotonous time"
     end
     @last_time = time

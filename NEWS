@@ -1,6 +1,7 @@
 
+    * AutomaticSnapshotMadeleine detects snapshot format on recovery
     * Snapshot compression with Madeleine::ZMarshal
-    * YAML snapshots supported while using automatic commands
+    * YAML snapshots supported for automatic commands
     * Read-only methods for automatic commands
 
 Madeleine 0.6.1 (March 30, 2004):
