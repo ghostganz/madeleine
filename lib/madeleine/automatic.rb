@@ -148,7 +148,7 @@ module Madeleine
     class Automatic_marshaller #:nodoc:
       def Automatic_marshaller.load(io)
         restored_obj = Deserialize.load(io, Thread.current[:system].marshaller)
-        ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (o.sysid == restored_obj.sysid)}
+        ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (!o.frozen? && o.sysid == restored_obj.sysid)}
         restored_obj
       end
       def Automatic_marshaller.dump(obj, stream = nil)
@@ -316,6 +316,14 @@ module Madeleine
       def AutomaticSnapshotMadeleine.systems
         @@systems
       end
+#
+# Close method freezes up the Prox objects so they can't be mistaken for real ones in a new system before GC gets them
+#
+      def close
+        @list.each_key {|k| myid2ref(k).freeze}
+        @persister.close
+      end
+
 #
 # Pass on any other calls to the persister
 #
