@@ -226,6 +226,7 @@ class CommandLogTest < Test::Unit::TestCase
   end
 
   def teardown
+    @target.close
     File.delete(expected_file_name)
   end
 
@@ -241,6 +242,7 @@ class CommandLogTest < Test::Unit::TestCase
     read_command = Marshal.load(f)
     assert_equal(3, read_command.value)
     assert_equal(f.stat.size, f.tell)
+    f.close
   end
 
   def expected_file_name
