@@ -36,7 +36,12 @@ module Madeleine
     def load(stream)
       zstream = Zlib::GzipReader.new(stream)
       begin
-        return @marshaller.load(zstream)
+        # Buffer into a string first, since GzipReader can't handle
+        # Marshal's 0-sized reads and SOAP can't handle streams at all.
+        # In a bright future we can revert to reading directly from the
+        # stream again.
+        buffer = zstream.read
+        return @marshaller.load(buffer)
       ensure
         zstream.finish
       end
