@@ -53,7 +53,6 @@ module Madeleine
 # command for it is executed.  This is the case when restoring a system for which there is no snapshot.
 #
     class Command
-
       def initialize(symbol, myid, sysid, *args)
         @symbol = symbol
         @myid = myid
@@ -67,7 +66,6 @@ module Madeleine
         AutomaticSnapshotMadeleine.register_sysid(@sysid) if (system.sysid != @sysid)
         Thread.current[:system].myid2ref(@myid).thing.send(@symbol, *@args)
       end
-
     end
 #
 # A Prox object is generated and returned by Interceptor each time a system object is created.
@@ -157,11 +155,7 @@ module Madeleine
         AutomaticSnapshotMadeleine.register_sysid(@sysid) # this sysid may be overridden
         @marshaller = marshaller # until attrb
         begin
-          if marshaller.nil?
-            @persister = persister.new(directory_name, &new_system_block)
-          else
-            @persister = persister.new(directory_name, marshaller, &new_system_block)
-          end
+          @persister = persister.new(directory_name, marshaller, &new_system_block)
           AutomaticSnapshotMadeleine.register_sysid(@sysid) # needed if there were no commands
         ensure
           Thread.current[:system] = false
@@ -237,3 +231,5 @@ module Madeleine
 
   end
 end
+
+AutomaticSnapshotMadeleine = Madeleine::Automatic::AutomaticSnapshotMadeleine
