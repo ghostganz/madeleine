@@ -8,6 +8,22 @@ module Madeleine
 
   FILE_COUNTER_SIZE = 21
 
+  class CommandLog
+    class << self
+
+      def command_file?(file_name)
+        file_name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command\_log$/
+      end
+
+      def file_name(id)
+        name = ("0" * FILE_COUNTER_SIZE) + id.to_s
+        name = name[name.length - FILE_COUNTER_SIZE, name.length - 1]
+        name += ".command_log"
+      end
+
+    end
+  end
+
   class Logger
 
     def initialize(directory_name)
@@ -32,23 +48,21 @@ module Madeleine
 
     private
 
-    def each_log_file_name(&block)
-      Dir.foreach(@directory_name) {|file_name|
-        if file_name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command\_log$/
-          block.call(file_name)
-        end
+    def log_file_names
+      Dir.entries(@directory_name).select {|name|
+        CommandLog.command_file?(name)
       }
     end
 
     def delete_log_files
-      each_log_file_name {|name|
+      log_file_names.each {|name|
         File.delete(@directory_name + File::SEPARATOR + name)
       }
     end
 
     def highest_log
       highest = 0
-      each_log_file_name {|file_name|
+      log_file_names.each {|file_name|
         match = /^(\d{#{FILE_COUNTER_SIZE}})/.match(file_name)
         n = match[1].to_i
         if n > highest
@@ -59,14 +73,8 @@ module Madeleine
     end
 
     def open_new_file
-      name = log_name(highest_log + 1)
+      name = CommandLog.file_name(highest_log + 1)
       @log = open(@directory_name + File::SEPARATOR + name, 'w')
-    end
-
-    def log_name(id)
-      name = ("0" * FILE_COUNTER_SIZE) + id.to_s
-      name = name[name.length - FILE_COUNTER_SIZE, name.length - 1]
-      name += ".command_log"
     end
   end
 
@@ -162,7 +170,7 @@ module Madeleine
       end
 
       Dir.foreach(@directory_name) {|file_name|
-        if file_name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command\_log$/
+        if CommandLog.command_file?(file_name)
           open(@directory_name + File::SEPARATOR + file_name) {|log|
             recover_log(log)
           }
