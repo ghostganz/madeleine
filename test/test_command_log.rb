@@ -8,6 +8,7 @@ end
 
 require 'madeleine'
 require 'test/unit'
+require 'stringio'
 
 class ExampleCommand
   attr :value
@@ -24,7 +25,7 @@ end
 class CommandLogTest < Test::Unit::TestCase
 
   def setup
-    @target = Madeleine::CommandLog.new(".")
+    @target = Madeleine::CommandLog.new(".", FileService.new)
   end
 
   def teardown
@@ -51,3 +52,54 @@ class CommandLogTest < Test::Unit::TestCase
     "000000000000000000001.command_log"
   end
 end
+
+
+class CommandLogTestUsingMocks < Test::Unit::TestCase
+
+  def test_logging
+    file_service = Object.new
+    def file_service.exist?(path)
+      [
+        ["some", "path"].join(File::SEPARATOR),
+        ["some", "path", "000000000000000000001.command_log"].join(File::SEPARATOR),
+        ["some", "path", "000000000000000000002.command_log"].join(File::SEPARATOR),
+        ["some", "path", "000000000000000000003.command_log"].join(File::SEPARATOR),
+      ].include?(path)
+    end
+    def file_service.dir_entries(path, &block)
+      if path != ["some", "path"].join(File::SEPARATOR)
+        raise "wrong path"
+      end
+      [
+        "000000000000000000001.command_log",
+        "000000000000000000003.command_log",
+        "000000000000000000002.command_log",
+      ]
+    end
+    def file_service.open(path, flags)
+      if path != ["some", "path", "000000000000000000004.command_log"].join(File::SEPARATOR)
+        raise "wrong file id"
+      end
+      if flags != "wb"
+        raise "wrong flags"
+      end
+      @file = StringIO.new
+      @file
+    end
+    def file_service.file
+      @file
+    end
+
+    target = Madeleine::CommandLog.new("some/path", file_service)
+
+    command = ExampleCommand.new(1234)
+
+    target.store(command)
+
+    file_service.file.rewind
+    assert_equal(Marshal.dump(command), file_service.file.read)
+
+    # assert file was flushed
+  end
+end
+

@@ -295,6 +295,7 @@ suite << SnapshotMadeleineTest.suite
 suite << NumberedFileTest.suite
 require 'test_command_log'
 suite << CommandLogTest.suite
+suite << CommandLogTestUsingMocks.suite
 suite << LoggerTest.suite
 suite << CommandVerificationTest.suite
 suite << CustomMarshallerTest.suite
