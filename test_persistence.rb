@@ -144,7 +144,7 @@ class PersistenceTest < Test::Unit::TestCase
 
     clear_prevalence_base
     snapshot
-		
+
     crash_recover
     add(10,137)
     add(2,139)
@@ -193,8 +193,6 @@ class TimeTest < Test::Unit::TestCase
 
     # When launch() has returned it should have sent
     # one synchronous clock-tick
-    # (This depends a little too much on that newly created
-    # threads are immediately scheduled)
     assert_equal(1, @forward_calls)
 
     sleep(0.1)

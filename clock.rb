@@ -40,10 +40,11 @@ module Madeleine
       def initialize(prevayler, delay)
         @prevayler = prevayler
         @is_destroyed = false
+        send_tick
         @thread = Thread.new {
           until @is_destroyed
-            send_tick
             sleep(delay)
+            send_tick
           end
         }
       end
