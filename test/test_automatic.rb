@@ -464,11 +464,6 @@ class DontInterceptTest < AutoTest
   end
 end
 
-class DummyTest < AutoTest
-  def test_main
-  end
-end
-
 def add_automatic_tests(suite)
   suite << BasicTest.suite
   suite << ObjectOutsideTest.suite
@@ -481,7 +476,6 @@ def add_automatic_tests(suite)
   suite << FinalisedTest.suite
   suite << DontInterceptTest.suite
   suite << AutomaticCustomMarshallerTest.suite
-  suite << DummyTest.suite
 end
 
 def add_slow_automatic_tests(suite)
