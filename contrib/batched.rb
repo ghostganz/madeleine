@@ -8,7 +8,7 @@
 # which is included in Ruby 1.8.
 #
 # Writes are batched for a specified amount of time, before written to disk and
-# then executed. This 
+# then executed.
 #
 # For a detailed discussion about the problem, see
 #  http://www.prevayler.org/wiki.jsp?topic=OvercomingTheWriteBottleneck
@@ -33,9 +33,8 @@ module Madeleine
 
       def execute_command(command)
         verify_command_sane(command)
-        raise "closed" if @closed
-
         @lock.sync_synchronize(:SH) do
+          raise "closed" if @closed
           @logger.store(command)
         end
       end
