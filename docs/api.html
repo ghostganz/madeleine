@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+<head>
+<title>API - Madeleine</title>
+<style>
+p {
+    width: 70ex
+}
+h1 {
+    font-family: verdana,arial,helvetica,sans-serif;
+}
+h2 {
+    font-family: verdana,arial,helvetica,sans-serif;
+}
+.classMethod {
+    font-family: courier,monospace;
+    font-weight: bold;
+}
+
+.instanceMethod {
+    font-family: courier,sans-serif;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Madeleine API</h1>
+
+<h2>Madeleine::SnapshotMadeleine</h2>
+
+<div class="classMethod">new(new_system, directory_name)</div>
+
+<ul>
+  <li><code>new_system</code> - New system to use if no stored system was found.
+  <li><code>directory_name</code> - Storage directory to use. Will be created if needed.
+</ul>
+
+<p>[... fixme ...]
+
+<div class="instanceMethod">execute_command(aCommand)</div>
+
+<ul>
+  <li><code>aCommand</code> - The command to execute on the system.
+</ul>
+
+<p>Commands must have a method <code>execute(aSystem)</code>,
+otherwise an error, <code>Madeleine::InvalidCommandException</code>, will be raised.
+
+<div class="instanceMethod">take_snapshot()</div>
+
+<p>Takes a snapshot of the current system.
+
+<p>You need to regularly take a snapshot of a running system,
+otherwise the logs will grow big and restarting the system will take a
+long time. Your backups must also be done from the snapshot files,
+since you can't make a consistent backup of a live log.
+
+<p>A practical way of doing snapshots is a timer thread:
+
+<pre>
+Thread.new(madeleine) {|madeleine|
+  while true
+    sleep(60 * 60 * 24) # 24 hours
+    madeleine.take_snapshot
+  end
+}
+
+
+</pre>
+
+
+
+</body>
+</html>

@@ -1,3 +1,4 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <html>
 <head>
 <title>Design rules - Madeleine</title>
@@ -64,6 +65,11 @@ call into the system when needed.
 <h3>Changes to the system have to be done through command
 objects</h3>
 
+<p>Everything that modifies the prevalent system must be done through a
+<em>command object</em> sent to the Madeleine instance, using
+<code>execute_command(aCommand)</code>. Queries that don't modify the
+system can be done either through direct method calls or through
+command objects.
 
 <h2>Command objects</h2>
 
