@@ -20,6 +20,7 @@ end
 
 module TestUtils
   def delete_directory(directory_name)
+    return unless File.exists?(directory_name)
     Dir.foreach(directory_name) do |file|
       next if file == "."
       next if file == ".."
@@ -288,9 +289,14 @@ end
 
 
 class SharedLockQueryTest < Test::Unit::TestCase
+  include TestUtils
 
   def prevalence_base
     "shared_lock_test"
+  end
+
+  def teardown
+    delete_directory(prevalence_base)
   end
 
   def test_query
@@ -331,6 +337,8 @@ require 'test_automatic'
 add_automatic_tests(suite)
 require 'test_persistence'
 add_persistence_tests(suite)
+require 'test_platforms'
+add_platforms_tests(suite)
 
 require 'test/unit/ui/console/testrunner'
 Test::Unit::UI::Console::TestRunner.run(suite)
