@@ -193,7 +193,7 @@ module Madeleine
 
     def self.log_file_names(directory_name)
       result = Dir.entries(directory_name).select {|name|
-        name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command\_log$/
+        name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command_log$/
       }
       result.each {|name| name.untaint }
       result
@@ -262,13 +262,10 @@ module Madeleine
 
     private
 
-    def log_file_names
-      CommandLog.log_file_names(@directory_name)
-    end
-
     def delete_log_files
-      log_file_names.each {|name|
-        File.delete(@directory_name + File::SEPARATOR + name)
+      Dir.glob(@directory_name + File::SEPARATOR + "*.command_log").each {|name|
+        name.untaint
+        File.delete(name)
       }
     end
 
