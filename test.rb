@@ -203,6 +203,31 @@ class ErrorHandlingTest < Test::Unit::TestCase
   end
 end
 
+class QueryTest < Test::Unit::TestCase
+  include TestUtils
+
+  def teardown
+    delete_directory(prevalence_base)
+  end
+
+  def prevalence_base
+    "query-base"
+  end
+
+  def test_querying
+    madeleine = SnapshotMadeleine.new(prevalence_base) { "hello" }
+    query = Object.new
+    def query.execute(system)
+      system.size
+    end
+    # 'query' is an un-marshallable singleton, so we implicitly test
+    # that querys aren't stored.
+    assert_equal(5, madeleine.execute_query(query))
+    # TODO: assert that no logging was done
+    # TODO: assert that lock was held
+  end
+end
+
 
 suite = Test::Unit::TestSuite.new("Madeleine")
 
@@ -213,6 +238,7 @@ suite << LoggerTest.suite
 suite << CommandVerificationTest.suite
 suite << CustomMarshallerTest.suite
 suite << ErrorHandlingTest.suite
+suite << QueryTest.suite
 
 require 'test_clocked'
 add_clocked_tests(suite)

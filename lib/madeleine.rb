@@ -57,7 +57,7 @@ module Madeleine
     # Otherwise an error, <tt>Madeleine::InvalidCommandException</tt>,
     # will be raised.
     #
-    # The return value from the command's <tt>execute</tt> method is returned.
+    # The return value from the command's <tt>execute()</tt> method is returned.
     #
     # * <tt>command</tt> - The command to execute on the system.
     def execute_command(command)
@@ -66,6 +66,19 @@ module Madeleine
         raise "closed" if @closed
         @logger.store(command)
         execute_without_storing(command)
+      }
+    end
+
+    # Execute a query on the prevalent system.
+    #
+    # Only differs from <tt>execute_command</tt> in that the command/query isn't logged, and
+    # therefore isn't allowed to modify the system. A lock is held, preventing other threads
+    # from modifying the system while the query is running.
+    #
+    # * <tt>query</tt> - The query command to execute
+    def execute_query(query)
+      synchronize {
+        execute_without_storing(query)
       }
     end
 

@@ -1,4 +1,9 @@
 
+    * execute_query()
+    * API documentation in RDoc format
+
+Madeleine 0.3 (May 15, 2003):
+
     * Automatic commands
     * Some classes exported to the default module
     * Clock support not loaded by default (require 'madeleine/clock')
