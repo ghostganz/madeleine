@@ -229,6 +229,54 @@ class QueryTest < Test::Unit::TestCase
 end
 
 
+class TimeOptimizingLoggerTest < Test::Unit::TestCase
+
+  def setup
+    @target = Madeleine::Logger.new("some_directory", self)
+    @log = []
+    def @log.store(command)
+      self << command
+    end
+  end
+
+  def test_optimizing_ticks
+    assert_equal(0, @log.size)
+    @target.store(Madeleine::Clock::Tick.new(Time.at(3)))
+    assert_equal(0, @log.size)
+    @target.store(Madeleine::Clock::Tick.new(Time.at(22)))
+    assert_equal(0, @log.size)
+    @target.store(Addition.new(100))
+    assert_kind_of(Madeleine::Clock::Tick, @log[0])
+    assert_equal(22, value_of_tick(@log[0]))
+    assert_equal(100, @log[1].value)
+    assert_equal(2, @log.size)
+  end
+
+  def value_of_tick(tick)
+    @clock = Object.new
+    def @clock.forward_to(time)
+      @value = time.to_i
+    end
+    def @clock.value
+      @value
+    end
+    tick.execute(self)
+    @clock.value
+  end
+
+  # Self-shunt
+  def create_log(directory_name)
+    assert_equal("some_directory", directory_name)
+    @log
+  end
+
+  # Self-shunt
+  def clock
+    @clock
+  end
+end
+
+
 suite = Test::Unit::TestSuite.new("Madeleine")
 
 suite << SnapshotMadeleineTest.suite
@@ -239,6 +287,7 @@ suite << CommandVerificationTest.suite
 suite << CustomMarshallerTest.suite
 suite << ErrorHandlingTest.suite
 suite << QueryTest.suite
+suite << TimeOptimizingLoggerTest.suite
 
 require 'test_clocked'
 add_clocked_tests(suite)

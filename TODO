@@ -1,6 +1,5 @@
 
 * ClockCommand
-* execute_query()
 * Integrate batched-writes in SnapshotMadeleine
 * More sample code
 * More documentation

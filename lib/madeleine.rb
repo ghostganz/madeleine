@@ -46,7 +46,6 @@ module Madeleine
       @in_recovery = false
       @closed = false
       @lock = create_lock
-      ensure_directory_exists
       recover_system(new_system_block)
       @logger = create_logger(directory_name, log_factory)
     end
@@ -169,12 +168,6 @@ module Madeleine
       end
     end
 
-    def ensure_directory_exists
-      if ! File.exist?(@directory_name)
-        Dir.mkdir(@directory_name)
-      end
-    end
-
     def verify_command_sane(command)
       if ! command.respond_to?(:execute)
         raise InvalidCommandException.new("Commands must have an 'execute' method")
@@ -209,6 +202,7 @@ module Madeleine
   class CommandLog < NumberedFile #:nodoc:
 
     def self.log_file_names(directory_name)
+      return [] unless File.exist?(directory_name)
       result = Dir.entries(directory_name).select {|name|
         name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command_log$/
       }
@@ -257,6 +251,14 @@ module Madeleine
       @directory_name = directory_name
       @log_factory = log_factory
       @log = nil
+      @pending_tick = nil
+      ensure_directory_exists
+    end
+
+    def ensure_directory_exists
+      if ! File.exist?(@directory_name)
+        Dir.mkdir(@directory_name)
+      end
     end
 
     def reset
@@ -265,6 +267,18 @@ module Madeleine
     end
 
     def store(command)
+      if command.kind_of?(Madeleine::Clock::Tick)
+        @pending_tick = command
+      else
+        if @pending_tick
+          internal_store(@pending_tick)
+          @pending_tick = nil
+        end
+        internal_store(command)
+      end
+    end
+
+    def internal_store(command)
       if @log.nil?
         open_new_log
       end
@@ -294,6 +308,7 @@ module Madeleine
   class SnapshotFile < NumberedFile #:nodoc:
 
     def self.highest_id(directory_name)
+      return 0 unless File.exist?(directory_name)
       highest = 0
       Dir.foreach(directory_name) {|file_name|
         match = /^(\d{#{FILE_COUNTER_SIZE}}\.snapshot$)/.match(file_name)

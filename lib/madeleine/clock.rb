@@ -101,25 +101,8 @@ module Madeleine
     # Internal classes below
     #
 
-    class TimeOptimizingLogger < Logger #:nodoc:
-
-      def initialize(directory_name, log_factory)
-        super
-        @pending_tick = nil
-      end
-
-      def store(command)
-        if command.kind_of?(Tick)
-          @pending_tick = command
-        else
-          if @pending_tick
-            super(@pending_tick)
-            @pending_tick = nil
-          end
-          super(command)
-        end
-      end
-    end
+    # Deprecated. Merged into default implementation.
+    TimeOptimizingLogger = Logger
 
 
     class Tick #:nodoc:
