@@ -139,20 +139,26 @@ module Madeleine
     def initialize(directory_name, log_factory)
       @directory_name = directory_name
       @log_factory = log_factory
-      open_new_log
+      @log = nil
     end
 
     def reset
+      close
       delete_log_files
-      open_new_log
     end
 
     def store(command)
+      if @log.nil?
+        open_new_log
+      end
       @log.store(command)
     end
 
     def close
-      @log.close
+      unless @log.nil?
+        @log.close
+        @log = nil
+      end
     end
 
     private
