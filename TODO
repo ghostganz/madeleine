@@ -1,7 +1,6 @@
 
 * Do benchmarks
 * Handle broken logs?
-* Clock
 
 * More tests:
     * Concurrent threads
