@@ -1,11 +1,15 @@
 
+* Sample code
+* Documentation
+
+* Get it working on Windows
+
 * Do benchmarks
 * Handle broken logs?
 
-* More tests:
-    * Concurrent threads
+* Transparent commands (using aspects)
 
-* Transparent commands using aspects
+* Rollback
 
 * Package it for installation as a library
 

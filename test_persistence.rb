@@ -44,6 +44,11 @@ class PersistenceTest < Test::Unit::TestCase
     @prevayler = nil
   end
 
+  def teardown
+    delete_prevalence_files(prevalence_base)
+    Dir.delete(prevalence_base)
+  end
+
   def verify(expected_total)
     assert_equal(expected_total, prevalence_system().total(), "Total")
   end
@@ -189,7 +194,7 @@ class TimeTest < Test::Unit::TestCase
     # When launch() has returned it should have sent
     # one synchronous clock-tick
     # (This depends a little too much on that newly created
-    # threads are always scheduled)
+    # threads are immediately scheduled)
     assert_equal(1, @forward_calls)
 
     sleep(0.1)
