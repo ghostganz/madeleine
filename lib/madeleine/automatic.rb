@@ -67,7 +67,7 @@ module Madeleine
     module Interceptor
 #
 # When included, redefine new so that we can return a proxy object instead, and define methods to handle
-# keeping track of which methods are read only
+# keeping track of which methods are read only.  This information is kept in a class instance variable.
 #
       def self.included(klass)
         class <<klass #:nodoc:
@@ -78,6 +78,7 @@ module Madeleine
           end
 #
 # Called when a method added - remember symbol if read only 
+# This is a good place to add in any superclass's read only methods also
 #
           def method_added(symbol)
             self.instance_eval {
@@ -86,7 +87,9 @@ module Madeleine
               @read_only_methods << symbol if @auto_read_only_flag
               c = self
               while (c = c.superclass)
-                @read_only_methods |= c.instance_eval {@read_only_methods} if c.instance_eval {instance_variables.include? "@read_only_methods"}
+                if (c.instance_eval {instance_variables.include? "@read_only_methods"})
+                  @read_only_methods |= c.instance_eval {@read_only_methods}
+                end
               end
             }
           end
@@ -171,9 +174,14 @@ module Madeleine
         raise "App object created outside of app" unless Thread.current[:system]
         @sysid = Thread.current[:system].automatic_objects.sysid
         @myid = Thread.current[:system].automatic_objects.add(client_object)
+
+        ObjectSpace.define_finalizer(self, Automatic_proxy.finalizer(@sysid,@myid))
       end
-      def automatic_client_object
-        AutomaticSnapshotMadeleine.systems[@sysid].automatic_objects.client_objects[@myid]
+#
+# Generate a finalizer for an Automatic_proxy object
+#
+      def Automatic_proxy.finalizer(sysid, myid)
+        proc {AutomaticSnapshotMadeleine.systems[sysid].automatic_objects.remove_ref(myid)}
       end
 #
 # This automatically makes and executes a new Command if a method is called from 
@@ -209,12 +217,19 @@ module Madeleine
 # == is overridden so that you can compare your own objects.  This is because there may be more than one
 # Automatic_proxy object that refers to the same client object.
 #
+# Another possible candidate for overriding in this way is ===, although this is not done at present
+#
       def ==(other)
         if (other.respond_to? :automatic_client_object)
           automatic_client_object == other.automatic_client_object
         else
           automatic_client_object == other
         end
+      end
+
+      protected
+      def automatic_client_object
+        AutomaticSnapshotMadeleine.systems[@sysid].automatic_objects.client_objects[@myid]
       end
     end
 
@@ -226,15 +241,41 @@ module Madeleine
       attr_reader :sysid, :client_objects
       def initialize
         @sysid = Time.now.to_f.to_s + Thread.current.object_id.to_s # Gererate a new sysid
-        @client_objects = []
+        @client_objects = {}
+        @ref_counts = {}
+        @myid_count = 0
       end
 #
 # Add a client object to the list, return the myid for that object
 #
       def add(client_object)
-        @client_objects << client_object unless (@client_objects.include? client_object)
-        @client_objects.index client_object
-     end
+        if (idx = @client_objects.index client_object)
+          @ref_counts[idx] += 1
+          idx
+        else
+          @myid_count += 1
+          @client_objects[@myid_count] = client_object
+          @ref_counts[@myid_count] = 1
+          @myid_count
+        end
+      end
+#
+# This is a simple garbage collector - each time an automatic_proxy is destroyed we reduce the count
+# on our client object, and we delete it if the count is zero.  This will work most of the time, 
+# except when a proxy is created and a snapshot is taken before the proxy being discarded - on restore
+# the ref_count for the client object will be more than it should be.
+#
+      def remove_ref(myid)
+        if (@client_objects.has_key? myid)
+          @ref_counts[myid] -= 1
+          if (@ref_counts[myid] == 0)
+            @client_objects.delete(myid)
+            @ref_counts.delete(myid)
+          end
+        else
+          raise "Trying to remove a ref from a missing object"
+        end
+      end
     end
 #
 # The AutomaticSnapshotMadeleine class contains an instance of the persister
