@@ -38,6 +38,16 @@ class Addition
   end
 end
 
+class Append
+  def initialize(value)
+    @value = value
+  end
+
+  def execute(system)
+    system << @value
+  end
+end
+
 
 module TestUtils
   def delete_directory(directory_name)
@@ -50,6 +60,31 @@ module TestUtils
     Dir.delete(directory_name)
   end
 end
+
+
+class SnapshotMadeleineTest < Test::Unit::TestCase
+  include TestUtils
+
+  def teardown
+    delete_directory(persistence_base)
+  end
+
+  def persistence_base
+    "closing-test"
+  end
+
+  def test_closing
+    madeleine = Madeleine::SnapshotMadeleine.new(persistence_base) { "hello" }
+    madeleine.close
+    assert_raises(RuntimeError) do
+      madeleine.execute_command(Append.new("world"))
+    end
+    assert_raises(RuntimeError) do
+      madeleine.take_snapshot
+    end
+  end
+end
+
 
 class PersistenceTest < Test::Unit::TestCase
 
@@ -330,6 +365,7 @@ end
 
 
 suite = Test::Unit::TestSuite.new("Madeleine")
+suite << SnapshotMadeleineTest.suite
 suite << NumberedFileTest.suite
 suite << CommandLogTest.suite
 suite << LoggerTest.suite

@@ -21,11 +21,13 @@ module Madeleine
       @logger = Logger.new(directory_name, log_factory)
       @lock = Mutex.new
       @in_recovery = false
+      @closed = false
     end
 
     def execute_command(command)
       verify_command_sane(command)
       @lock.synchronize {
+        raise "closed" if @closed
         @logger.store(command)
         execute_without_storing(command)
       }
@@ -33,9 +35,17 @@ module Madeleine
 
     def take_snapshot
       @lock.synchronize {
+        raise "closed" if @closed
         @logger.close
         Snapshot.new(@directory_name, system, @marshaller).take
         @logger.reset
+      }
+    end
+
+    def close
+      @lock.synchronize {
+        @logger.close
+        @closed = true
       }
     end
 
