@@ -155,9 +155,71 @@ class NumberedFileTest < Test::Unit::TestCase
   end
 end
 
+class TimeTest < Test::Unit::TestCase
+
+  def test_clock
+    target = Madeleine::Clock.new
+    assert_equal(0, target.time.to_i)
+    assert_equal(0, target.time.usec)
+
+    t1 = Time.at(10000)
+    target.forward_to(t1)
+    assert_equal(t1, target.time)
+    t2 = Time.at(20000)
+    target.forward_to(t2)
+    assert_equal(t2, target.time)
+
+    assert_nothing_raised() {
+      target.forward_to(t2)
+    }
+    assert_raises(RuntimeError) {
+      target.forward_to(t1)
+    }
+  end
+
+  def test_time_actor
+    @forward_calls = 0
+    @last_time = Time.at(0)
+
+    target = Madeleine::TimeActor.launch(self, 0.01)
+    sleep(0.1)
+    assert(@forward_calls > 1)
+    target.destroy
+  end
+
+  # Self-shunt
+  def execute_command(command)
+    mock_system = self
+    command.execute(mock_system)
+  end
+
+  # Self-shunt
+  def forward_clock_to(time)
+    if time <= @last_time
+      raise "non-monotonous time"
+    end
+    @last_time = time
+    @forward_calls += 1
+  end
+
+  def test_clocked_system
+    target = Madeleine::ClockedSystem.new
+    assert_equal(Time.at(0), target.time)
+    t1 = Time.at(10000)
+    target.forward_clock_to(t1)
+    assert_equal(t1, target.time)
+
+    reloaded_target = Marshal.load(Marshal.dump(target))
+    assert_equal(t1, reloaded_target.time)
+  end
+end
+
+
 
 suite = Test::Unit::TestSuite.new("Madeleine")
 suite << PersistenceTest.suite
 suite << NumberedFileTest.suite
+suite << TimeTest.suite
+
 require 'test/unit/ui/console/testrunner'
 Test::Unit::UI::Console::TestRunner.run(suite)
