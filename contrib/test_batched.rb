@@ -79,9 +79,11 @@ module Madeleine::Batch
         }
       end
 
+      s = 0
       snapshot = Thread.new {
         while going
           madeleine.take_snapshot
+          s += 1
           sleep(0.01)
         end
       }
@@ -128,7 +130,7 @@ module Madeleine::Batch
       end
 
       def flush
-        @logger.flush(lock)
+        @logger.flush
       end
 
       def lock
@@ -201,7 +203,7 @@ module Madeleine::Batch
       f.close
 
       actor.destroy
-      @target.flush(@madeleine.lock)
+      @target.flush
       @target.close
 
     end

@@ -21,8 +21,12 @@
 # You can also use the execute_query method for shared synchronzied queries,
 # for eaay coarse-grained locking of the system.
 #
-# The exclusive lock is only locked during the actual execution of commands.
+# The exclusive lock is only locked during the actual execution of commands and
+# while closing.
 #
+# Keeping both log writes and executes of commands in the originating thread 
+# is needed by AutomaticSnapshotPrevayler. Hence the strange SimplisticPipe
+# class.
 #
 # Todo: 
 #    - It seems like Sync (sync.rb) prefers shared locks. This should probably
@@ -35,23 +39,14 @@
 #
 
 require 'madeleine'
-require 'madeleine/clock'
-
-include Madeleine::Clock
 
 module Madeleine
   module Batch
-
     class BatchedSnapshotMadeleine < SnapshotMadeleine
 
       def initialize(directory_name, marshaller=Marshal, &new_system_block)
         super(directory_name, marshaller, &new_system_block)
         @log_actor = LogActor.launch(self)
-        if @system.kind_of?(ClockedSystem)
-          @time_actor = TimeActor.launch(self)
-        else
-          @time_actor = nil
-        end
       end
 
       def execute_command(command)
@@ -72,18 +67,26 @@ module Madeleine
       end
 
       def close
-        @time_actor.destroy if @time_actor
         @log_actor.destroy
         @lock.synchronize do
-          flush
           @logger.close
           @closed = true
         end
       end
 
       def flush
+        @lock.synchronize do
+          @logger.flush
+        end
+      end
+
+      def take_snapshot
         @lock.synchronize(:SH) do
-          @logger.flush(@lock)
+          @lock.synchronize do
+            @logger.close
+          end
+          Snapshot.new(@directory_name, system, @marshaller).take
+          @logger.reset
         end
       end
 
@@ -144,47 +147,36 @@ module Madeleine
         super(directory_name, log_factory)
         @buffer = []
         @system = system
-        @disk_lock = Mutex.new
-        @ticks_only = true
       end
 
       def store(transaction)
-        @ticks_only = false if not transaction.command.instance_of?(Tick)
         @buffer << transaction
       end
 
-      def flush(lock)
-        @disk_lock.synchronize do
-          buffer = nil
-          ticks_only = false
+      def close
+        return if @log.nil?
+        flush
+        @log.close
+        @log = nil
+      end
 
-          lock.synchronize do
-            return if @buffer.empty?
+      def flush
+        return if @buffer.empty?
 
-            open_new_log if @log.nil?
+        open_new_log if @log.nil?
 
-            ticks_only = @ticks_only
-            @ticks_only = true
-
-            buffer = @buffer
-            @buffer = []
-          end
-
-          buffer.each do |transaction|
-            transaction.store(@log)
-          end
-
-          unless ticks_only
-            @log.flush
-          end
-
-          buffer.each do |transaction|
-           lock.synchronize do
-              transaction.execute(@system)
-            end
-          end
+        @buffer.each do |transaction|
+          transaction.store(@log)
         end
-      end     
+
+        @log.flush
+
+        @buffer.each do |transaction|
+          transaction.execute(@system)
+        end
+
+        @buffer.clear
+      end
     end
 
     class BatchedLog < CommandLog
@@ -199,8 +191,6 @@ module Madeleine
     end
 
     class QueuedTransaction
-      attr_reader :command
-
       def initialize(command)
         @command = command
         @pipe = SimplisticPipe.new
