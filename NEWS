@@ -1,4 +1,5 @@
 
+    * SnapshotMadeleine exported to default module
     * Clock support not loaded by default (require 'madeleine/clock')
     * Bug fix: Error handling when replaying logged commands.
     * New system through block instead of argument (API change)

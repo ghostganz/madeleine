@@ -74,7 +74,7 @@ class SnapshotMadeleineTest < Test::Unit::TestCase
   end
 
   def test_closing
-    madeleine = Madeleine::SnapshotMadeleine.new(persistence_base) { "hello" }
+    madeleine = SnapshotMadeleine.new(persistence_base) { "hello" }
     madeleine.close
     assert_raises(RuntimeError) do
       madeleine.execute_command(Append.new("world"))
@@ -132,7 +132,7 @@ class PersistenceTest < Test::Unit::TestCase
   end
 
   def create_madeleine
-    Madeleine::SnapshotMadeleine.new(prevalence_base()) { AddingSystem.new }
+    SnapshotMadeleine.new(prevalence_base()) { AddingSystem.new }
   end
 
   def snapshot
@@ -286,7 +286,7 @@ class CommandVerificationTest < Test::Unit::TestCase
   end
 
   def test_broken_command
-    target = Madeleine::SnapshotMadeleine.new("foo") { :a_system }
+    target = SnapshotMadeleine.new("foo") { :a_system }
     assert_raises(Madeleine::InvalidCommandException) do
       target.execute_command(:not_a_command)
     end
@@ -306,7 +306,7 @@ class CustomMarshallerTest < Test::Unit::TestCase
   end
 
   def madeleine_class
-    Madeleine::SnapshotMadeleine
+    SnapshotMadeleine
   end
 
   def test_changing_marshaller
@@ -352,11 +352,11 @@ class ErrorHandlingTest < Test::Unit::TestCase
   end
 
   def test_exception_in_command
-    madeleine = Madeleine::SnapshotMadeleine.new(prevalence_base) { "hello" }
+    madeleine = SnapshotMadeleine.new(prevalence_base) { "hello" }
     assert_raises(RuntimeError) do
       madeleine.execute_command(ErrorRaisingCommand.new)
     end
-    Madeleine::SnapshotMadeleine.new(prevalence_base) { "hello" }
+    SnapshotMadeleine.new(prevalence_base) { "hello" }
   end
 end
 

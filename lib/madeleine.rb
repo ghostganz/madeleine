@@ -260,3 +260,6 @@ module Madeleine
     end
   end
 end
+
+SnapshotMadeleine = Madeleine::SnapshotMadeleine
+
