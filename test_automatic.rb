@@ -10,6 +10,7 @@ $LOAD_PATH.unshift("lib")
 require 'madeleine'
 require 'madeleine/automatic'
 require 'test/unit'
+require 'contrib/batched.rb'
 
 class A
   include Madeleine::Automatic::Interceptor
@@ -86,6 +87,10 @@ end
 
 class AutoTest < Test::Unit::TestCase
 
+  def persister
+    SnapshotMadeleine
+  end
+
   def delete_directory(directory_name)
     return unless File.exist?(directory_name)
     Dir.foreach(directory_name) do |file|
@@ -102,7 +107,11 @@ class AutoTest < Test::Unit::TestCase
     Thread.critical = true
     @system_bases << dir
     Thread.critical = false
-    Madeleine::Automatic::AutomaticSnapshotMadeleine.new(dir) { klass.new(*arg) }
+    make_system(dir) { klass.new(*arg) }
+  end
+
+  def make_system(dir, marshaller=Marshal, &block)
+    AutomaticSnapshotMadeleine.new(dir, marshaller, persister, &block)
   end
 
   def prevalence_base
@@ -123,7 +132,7 @@ class AutoTest < Test::Unit::TestCase
     pb = prevalence_base + n.to_s
     mad_a = create_new_system(A, pb)
     mad_a.close
-    mad_a1 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(pb) { A.new }
+    mad_a1 = make_system(pb) { A.new }
     assert_equal(1, mad_a1.system.k, "No commands or snapshot")
     mad_a1.system.z = 0
     mad_a1.system.z += 1
@@ -131,16 +140,16 @@ class AutoTest < Test::Unit::TestCase
     mad_a1.system.z -= 10
     assert_equal(-9, mad_a1.system.z, "Object changes")
     mad_a1.close
-    mad_a2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(pb) { A.new }
+    mad_a2 = make_system(pb) { A.new }
     assert_equal(-9, mad_a2.system.z, "Commands but no snapshot")
     mad_a2.take_snapshot
     mad_a2.close
-    mad_a3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(pb) { A.new }
+    mad_a3 = make_system(pb) { A.new }
     assert_equal(-9, mad_a3.system.z, "Snapshot but no commands")
     mad_a3.system.z -= 6
     mad_a3.system.z -= 3
     mad_a3.close
-    mad_a4 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(pb) { A.new }
+    mad_a4 = make_system(pb) { A.new }
     assert_equal(-18, mad_a4.system.z, "Snapshot and commands")
     mad_a4.close
   end
@@ -198,7 +207,7 @@ class NonPersistedObjectTest < AutoTest
     assert_equal("hello again", mad_b.system.y.a.w, "Non persisted object before close")
 
     mad_b.close
-    mad_b2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
+    mad_b2 = make_system(prevalence_base) { B.new(0) }
     assert_equal(nil, mad_b2.system.y.a.w, "Non persisted object after restart, no snapshot")
     mad_b2.system.y.a.w ||= "hello"  # not saved
     mad_b2.system.y.a.w += " again"  # not saved
@@ -207,7 +216,7 @@ class NonPersistedObjectTest < AutoTest
     assert_equal("hello again again", mad_b2.system.y.a.w, "Non persisted object after take_snapshot and 1 change")
 
     mad_b2.close
-    mad_b3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
+    mad_b3 = make_system(prevalence_base) { B.new(0) }
     assert_equal("hello again", mad_b3.system.y.a.w, "Non persisted object after restore (back to snapshotted state)")
     mad_b3.close
   end
@@ -226,13 +235,13 @@ class RefInExternalObjTest < AutoTest
     assert_equal(2, mad_c.system.s.w.x, "Direct change")
     mad_c.close
 
-    mad_c2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
+    mad_c2 = make_system(prevalence_base) { B.new(0) }
     assert_equal(2, mad_c2.system.s.w.x, "Value via external object after commands/restore")
     assert_equal(2, mad_c2.system.y.x, "Direct value after restore")
     mad_c2.take_snapshot
     mad_c2.close
 
-    mad_c3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
+    mad_c3 = make_system(prevalence_base) { B.new(0) }
     assert_equal(2, mad_c3.system.s.w.x, "Value via external object after snapshot/restore")
     assert_equal(2, mad_c3.system.y.x, "Direct value after snapshot/restore")
 
@@ -240,7 +249,7 @@ class RefInExternalObjTest < AutoTest
     mad_c3.system.y.x += 1        # Increment counter directly
     mad_c3.close
 
-    mad_c4 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
+    mad_c4 = make_system(prevalence_base) { B.new(0) }
     assert_equal(4, mad_c4.system.s.w.x, "Value via external object after snapshot+commands/restore")
     assert_equal(4, mad_c4.system.y.x, "Direct value after snapshot+commands/restore")
     mad_c4.close
@@ -284,7 +293,7 @@ class ThreadConfidenceTest < AutoTest
     assert_equal(-125, mad_e.system.y.w, "125 commands")
 
     mad_e.close
-    mad_e2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base+"2") { G.new }
+    mad_e2 = make_system(prevalence_base+"2") { G.new }
 
     25.times {|n|
       x[n] = Thread.new {
@@ -322,16 +331,16 @@ class CircularReferenceTest < AutoTest
     mad_g = create_new_system(G, prevalence_base)
     mad_g.system.y.w = mad_g.system
     mad_g.close
-    mad_g2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { G.new }
+    mad_g2 = make_system(prevalence_base) { G.new }
     assert(mad_g2.system == mad_g2.system.y.w.y.w.y.w, "Circular reference after command/restore")
     mad_g2.take_snapshot
     mad_g2.close
-    mad_g3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { G.new }
+    mad_g3 = make_system(prevalence_base) { G.new }
     assert(mad_g3.system == mad_g3.system.y.w.y.w.y.w, "Circular reference after snapshot/restore")
     mad_g3.system.y.w.y.w.y.w.a = 1
     assert_equal(1, mad_g3.system.a, "Circular reference change")
     mad_g3.close
-    mad_g4 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { G.new }
+    mad_g4 = make_system(prevalence_base) { G.new }
     assert_equal(1, mad_g4.system.y.w.y.w.y.w.a, "Circular reference after snapshot+commands/restore")
     mad_g4.close
   end
@@ -363,12 +372,12 @@ class AutomaticCustomMarshallerTest < AutoTest
     dir = prevalence_base
     delete_directory(dir)
     @system_bases << dir
-    mad_h = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(dir, self) { A.new }
+    mad_h = make_system(dir, self) { A.new }
     mad_h.system.z = "abc"
     mad_h.take_snapshot
     mad_h.system.z += "d"
     mad_h.close
-    mad_h2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(dir, self) { A.new }
+    mad_h2 = make_system(dir, self) { A.new }
     assert_equal("abcd", mad_h2.system.z, "Custom marshalling after snapshot+commands/restore")
     mad_h2.close
   end
@@ -389,7 +398,7 @@ class ThreadedStartupTest < AutoTest
     }
     20.times {|n|
       x[n].join
-      mad_i = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base+n.to_s) { F.new }
+      mad_i = make_system(prevalence_base+n.to_s) { F.new }
       assert_equal(n, mad_i.system.z, "restored mad[#{n}].z")
       mad_i.close
     }
