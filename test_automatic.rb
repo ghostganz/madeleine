@@ -10,7 +10,7 @@ $LOAD_PATH.unshift("lib")
 require 'madeleine'
 require 'madeleine/automatic'
 require 'test/unit'
-require 'contrib/batched.rb'
+#require 'contrib/batched.rb' # uncomment if testing batched
 
 class A
   include Madeleine::Automatic::Interceptor
