@@ -1,0 +1,13 @@
+
+* Do benchmarks
+* Handle broken logs?
+* Clock
+* Port tests to Test::Unit
+
+* More tests:
+    * Concurrent threads
+
+* Transparent commands using aspects
+
+* Package it for installation as a library
+
