@@ -4,7 +4,7 @@
 # This is EXPERIMENTAL
 #
 # Copyright(c) Stephen Sykes 2003
-# Version 0.16
+# Version 0.17
 #
 # Usage:
 # class A
@@ -36,24 +36,22 @@ module Madeleine
     end
 #
 # Command object
-# A passed block cannot be serialized, so that bit won't work
 #
 # Note: if a command contains a sysid that doesn't match the system sent to us, then we change that
 # system's id to the one in the command.  This makes a system adopt the correct id as soon as a
 # command for it is executed.  This is the case when restoring a system for which there is no snapshot.
 #
     class Command
-      def initialize(symbol, myid, sysid, *args, &block)
+      def initialize(symbol, myid, sysid, *args)
         @symbol = symbol
         @myid = myid
         @sysid = sysid
         @args = args
-        @block = block
       end
 
       def execute(system)
         AutomaticSnapshotMadeleine.register_sysid(@sysid) if (system.sysid != @sysid)
-        Thread.current[:system].listid2ref(@myid).thing.send(@symbol, *@args, &@block)
+        Thread.current[:system].listid2ref(@myid).thing.send(@symbol, *@args)
       end
     end
 #
@@ -78,9 +76,10 @@ module Madeleine
         if (Thread.current[:system])
           @thing.send(symbol, *args, &block)
         else
+          raise "Cannot make command with block" if block_given?
           Thread.current[:system] = AutomaticSnapshotMadeleine.systems[@sysid]
           begin
-            x = Thread.current[:system].execute_command(Command.new(symbol, @myid, @sysid, *args, &block))
+            x = Thread.current[:system].execute_command(Command.new(symbol, @myid, @sysid, *args))
           ensure
             Thread.current[:system] = false
           end
