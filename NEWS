@@ -1,4 +1,5 @@
 
+    * Broken clock unit test on win32 fixed.
     * AutomaticSnapshotMadeleine detects snapshot format on recovery
     * Snapshot compression with Madeleine::ZMarshal
     * YAML snapshots supported for automatic commands
