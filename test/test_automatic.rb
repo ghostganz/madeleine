@@ -371,7 +371,35 @@ class AutomaticCustomMarshallerTest < AutoTest
     dir = prevalence_base
     delete_directory(dir)
     @system_bases << dir
+    mad_h = make_system(dir) { G.new }
+    mad_h.system.yy.w = "abc"
+    mad_h.take_snapshot
+    mad_h.system.yy.w += "d"
+    assert_equal("abcd", mad_h.system.yy.w, "Custom marshalling after snapshot+commands with normal marshaller")
+    mad_h.marshaller = YAML
+    mad_h.system.yy.w += "e"
+    assert_equal("abcde", mad_h.system.yy.w, "Custom marshalling after snapshot+commands+change marshaller+commands")
+    mad_h.take_snapshot
+    mad_h.close
+    File.open(dir + "/000000000000000000002.snapshot", "r") {|f|
+      assert_equal(f.gets, "--- !ruby/object:Madeleine::Automatic::Prox \n", "Custom marshalling marshaller change check")
+    }
+    mad_h = make_system(dir) { G.new }
+    assert_equal("abcde", mad_h.system.yy.w, 
+                 "Custom marshalling after snapshot+commands+change marshaller+commands+snapshot+restore with normal marshaller")
+    mad_h.system.yy.w += "f"
+    mad_h.close
+    mad_h = make_system(dir) { G.new }
+    assert_equal("abcdef", mad_h.system.yy.w, "Custom marshalling snapshot yaml+commands+restore normal")
+    mad_h.take_snapshot
+    mad_h.close
     mad_h = make_system(dir, YAML) { G.new }
+    assert_equal("abcdef", mad_h.system.yy.w, "Custom marshalling snapshot+restore yaml")
+    mad_h.take_snapshot
+    mad_h.system.yy.w += "g"
+    mad_h.close
+    mad_h = make_system(dir, YAML) { G.new }
+    assert_equal("abcdefg", mad_h.system.yy.w, "Custom marshalling after restore normal snapshot yaml+commands+restore yaml")
     mad_h.system.yy.w = "abc"
     mad_h.close
     mad_h2 = make_system(dir, YAML) { G.new }
