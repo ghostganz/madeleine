@@ -21,7 +21,7 @@ module Madeleine
   require 'sync'
   require 'madeleine/files'
 
-  MADELEINE_VERSION = "0.7"
+  MADELEINE_VERSION = "0.7.1"
 
   class SnapshotMadeleine
 
