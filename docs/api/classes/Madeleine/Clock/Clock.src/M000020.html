@@ -9,9 +9,6 @@
 <body bgcolor="white">
 <pre><span class="cmt"># File lib/madeleine/clock.rb, line 78</span>
       <span class="kw">def</span> forward_to(newTime)
-        <span class="kw">if</span> newTime &lt; @time
-          raise <span class="str">&quot;Can't decrease clock's time.&quot;</span>
-        <span class="kw">end</span>
         @time = newTime
       <span class="kw">end</span></pre>
 </body>

@@ -9,7 +9,7 @@
 <body bgcolor="white">
 <pre><span class="cmt"># File lib/madeleine.rb, line 78</span>
     <span class="kw">def</span> execute_query(query)
-      synchronize {
+      synchronize_shared {
         execute_without_storing(query)
       }
     <span class="kw">end</span></pre>

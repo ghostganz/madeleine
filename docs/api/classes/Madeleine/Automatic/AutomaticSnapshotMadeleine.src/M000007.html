@@ -14,8 +14,8 @@
         @@systems[sid] = Thread.current[:system]
         Thread.critical = <span class="kw">false</span>
         @@systems[sid].sysid = sid 
-        @@systems[sid].list.each {|o|  <span class="cmt"># set all the prox objects that already exist to have the right sysid</span>
-                         ObjectSpace._id2ref(o[1]).sysid = sid
+        @@systems[sid].list.each_value {|o|  <span class="cmt"># set all the prox objects that already exist to have the right sysid</span>
+                         ObjectSpace._id2ref(o).sysid = sid
                        }
       <span class="kw">end</span></pre>
 </body>
