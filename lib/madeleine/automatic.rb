@@ -159,6 +159,9 @@ module Madeleine
           @myid = Thread.current[:system].automatic_objects.add(client_object)
         end
       end
+      def automatic_client_object
+        AutomaticSnapshotMadeleine.systems[@sysid].automatic_objects.client_objects[@myid]
+      end
 #
 # This automatically makes and executes a new Command if a method is called from 
 # outside the system.
@@ -168,7 +171,7 @@ module Madeleine
           Thread.current[:system].add_system(@sysid)
           @sysid = Thread.current[:system].automatic_objects.sysid
         end
-        thing = AutomaticSnapshotMadeleine.systems[@sysid].automatic_objects.client_objects[@myid]
+        thing = automatic_client_object
 #      print "Sending #{symbol} to #{thing.to_s}, myid=#{@myid}, sysid=#{@sysid}\n"
         raise NoMethodError, "Undefined method" unless thing.respond_to?(symbol)
         if (Thread.current[:system] || thing.read_only_methods.include?(symbol))
@@ -183,6 +186,13 @@ module Madeleine
           end
           result
         end
+      end
+#
+# We need to override == so that users see their own objects.  There may be more than one
+# Automatic_proxy object that refers to the same client object.
+#
+      def ==(other)
+        automatic_client_object == other.automatic_client_object
       end
     end
 
@@ -200,7 +210,6 @@ module Madeleine
         @client_objects << client_object
         @client_objects.size - 1
       end
-
     end
 #
 # The AutomaticSnapshotMadeleine class contains an instance of the persister
@@ -313,11 +322,12 @@ module Madeleine
             if (detected_zmarshaller)
               if (detected_zmarshaller == SOAP::Marshal)
                 zio = Zlib::GzipReader.new(io)
-                zio.readlines.each {|l| print l}
+                xml = zio.read
                 zio.finish
-                io.rewind
+                SOAP::Marshal.load(xml)
+              else
+                ZMarshal.new(detected_zmarshaller).load(io)
               end
-              ZMarshal.new(detected_zmarshaller).load(io)
             else
               raise e
             end
