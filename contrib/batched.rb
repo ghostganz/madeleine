@@ -39,6 +39,9 @@
 #
 
 require 'madeleine'
+require 'madeleine/clock'
+
+include Madeleine::Clock
 
 module Madeleine
   module Batch
@@ -51,12 +54,12 @@ module Madeleine
 
       def execute_command(command)
         verify_command_sane(command)
-        transaction = QueuedTransaction.new(command)
+        queued_command = QueuedCommand.new(command)
         @lock.synchronize(:SH) do
           raise "closed" if @closed
-          @logger.store(transaction)
+          @logger.store(queued_command)
         end
-        transaction.wait_for
+        queued_command.wait_for
       end
 
       def execute_query(query)
@@ -149,8 +152,8 @@ module Madeleine
         @system = system
       end
 
-      def store(transaction)
-        @buffer << transaction
+      def store(queued_command)
+        @buffer << queued_command
       end
 
       def close
@@ -165,14 +168,18 @@ module Madeleine
 
         open_new_log if @log.nil?
 
-        @buffer.each do |transaction|
-          transaction.store(@log)
+        if @system.kind_of?(ClockedSystem)
+          @buffer.unshift(QueuedTick.new)
+        end
+
+        @buffer.each do |queued_command|
+          queued_command.store(@log)
         end
 
         @log.flush
 
-        @buffer.each do |transaction|
-          transaction.execute(@system)
+        @buffer.each do |queued_command|
+          queued_command.execute(@system)
         end
 
         @buffer.clear
@@ -190,7 +197,7 @@ module Madeleine
       end
     end
 
-    class QueuedTransaction
+    class QueuedCommand
       def initialize(command)
         @command = command
         @pipe = SimplisticPipe.new
@@ -212,6 +219,20 @@ module Madeleine
         @pipe.read do |system|          
           return @command.execute(system)
         end
+      end
+    end
+
+    class QueuedTick
+      def initialize
+        @tick = Tick.new(Time.now)
+      end
+
+      def store(log)
+        log.store(@tick)
+      end
+
+      def execute(system)
+        @tick.execute(system)
       end
     end
 

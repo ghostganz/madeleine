@@ -20,7 +20,7 @@ module Madeleine::Batch
       include Madeleine::Clock::ClockedSystem
     end
 
-    class PushTransaction
+    class PushCommand
       def initialize(value)
         @value = value
       end
@@ -30,10 +30,14 @@ module Madeleine::Batch
       end
     end 
 
-    class ArrayQueryTransaction
+    class ArrayQuery
+      def initialize
+        @time = []
+      end
+
       def execute(system)
-        length = system.length      
-        time = system.clock.time
+        length = system.length
+        @time << system.clock.time
 
         a = 1
         system.each do |n|
@@ -41,7 +45,7 @@ module Madeleine::Batch
         end      
 
         raise "inconsistent read" unless length == system.length
-        raise "inconsistent read" unless time == system.clock.time
+        raise "inconsistent read" unless @time.last == system.clock.time
       end
     end
 
@@ -56,7 +60,7 @@ module Madeleine::Batch
       10.times do |n| 
         w[n] = Thread.new {
           while going
-            madeleine.execute_command(PushTransaction.new(i))
+            madeleine.execute_command(PushCommand.new(i))
             i += 1
             sleep(0.1)
           end
@@ -64,7 +68,7 @@ module Madeleine::Batch
       end
 
       q = 0
-      query = ArrayQueryTransaction.new
+      query = ArrayQuery.new
       100.times do |n| 
         r[n] = Thread.new {
           while going
@@ -104,12 +108,12 @@ module Madeleine::Batch
 
       madeleine.close
 
-      madeleine2 = SnapshotMadeleine.new("LiveSnapshot")
+      madeleine2 = SnapshotMadeleine.new(prevalence_base)
       assert_equal(madeleine.system, madeleine2.system,  "Take system snapshots while accessing")
     end
 
     def prevalence_base
-      "LiveSnapshot"
+      "BatchedSnapshot"
     end
 
     def teardown
@@ -121,30 +125,15 @@ module Madeleine::Batch
 
     class MockMadeleine
       def initialize(logger)
-        @lock = MockSync.new
         @logger = logger
-      end
-
-      def execute_queued_transaction(transaction)
-        transaction.execute(nil)
       end
 
       def flush
         @logger.flush
       end
-
-      def lock
-        return @lock
-      end
     end
 
-    class MockSync
-      def synchronize
-        yield
-      end
-    end
-
-    class MockTransaction
+    class MockCommand
       attr_reader :text
 
       def initialize(text)
@@ -180,8 +169,8 @@ module Madeleine::Batch
       append("World")
       sleep(0.01)
 
-      assert_equal(2, @target.buffer_size, "Batched transaction queue")
-      assert(!File.exist?(expected_file_name), "Batched transactions not on disk")
+      assert_equal(2, @target.buffer_size, "Batched command queue")
+      assert(!File.exist?(expected_file_name), "Batched commands not on disk")
 
       sleep(0.2)
 
@@ -192,12 +181,12 @@ module Madeleine::Batch
       append("Again")
       sleep(0.2)
 
-      assert(File.size(expected_file_name) > file_size, "Transaction written to disk")
+      assert(File.size(expected_file_name) > file_size, "Command written to disk")
 
       f = File.new(expected_file_name)
 
       @messages.each do |message|
-        assert_equal(message, Marshal.load(f), "Transactions logged in order")
+        assert_equal(message, Marshal.load(f), "Commands logged in order")
       end
 
       f.close
@@ -210,11 +199,11 @@ module Madeleine::Batch
 
     def append(text)
       Thread.new { 
-        message = MockTransaction.new(text)
+        message = MockCommand.new(text)
         @messages << message
-        transaction = QueuedTransaction.new(message)
-        @target.store(transaction)
-        transaction.wait_for
+        queued_command = QueuedCommand.new(message)
+        @target.store(queued_command)
+        queued_command.wait_for
       }
     end
 
