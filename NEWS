@@ -1,4 +1,7 @@
 
+
+    * Bug fix: Fixed use of finalized object's id in AutomaticSnapshotMadeleine
+
 Madeleine 0.5 (August 31, 2003):
 
     * Bug fix: Log order on recovery was wrong on some platforms

@@ -211,10 +211,14 @@ module Madeleine
         @@systems ||= {}  # holds systems by sysid
         @@systems[sid] = Thread.current[:system]
         Thread.critical = false
-        @@systems[sid].sysid = sid 
+        @@systems[sid].sysid = sid
         @@systems[sid].list.each_value {|o|  # set all the prox objects that already exist to have the right sysid
-                         ObjectSpace._id2ref(o).sysid = sid
-                       }
+          begin
+            ObjectSpace._id2ref(o).sysid = sid
+          rescue RangeError
+            # Id was to a GC'd object
+          end
+        }
       end
 #
 # Returns the hash containing the systems. 
