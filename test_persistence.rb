@@ -290,24 +290,6 @@ class TimeOptimizingCommandLogTest < CommandLogTest
     @target = Madeleine::Clock::TimeOptimizingCommandLog.new(".")
   end
 
-  def test_logging
-    # Must always start with a tick
-    @target.store(Madeleine::Clock::Tick.new(123))
-
-    f = open(expected_file_name, 'r')
-    assert(f.stat.file?)
-    @target.store(Addition.new(7))
-    assert_equal(123, value_of_tick(Marshal.load(f)))
-    read_command = Marshal.load(f)
-    assert_equal(Addition, read_command.class)
-    assert_equal(7, read_command.value)
-    assert_equal(f.stat.size, f.tell)
-    @target.store(Addition.new(3))
-    read_command = Marshal.load(f)
-    assert_equal(3, read_command.value)
-    assert_equal(f.stat.size, f.tell)
-  end
-
   def test_optimizing_ticks
     f = open(expected_file_name, 'r')
     assert(f.stat.file?)
