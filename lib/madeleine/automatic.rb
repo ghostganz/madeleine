@@ -6,6 +6,17 @@ module Madeleine
 # Copyright:: Copyright (C) 2003-2004
 # Version::   0.3
 #
+# This module provides a way of automatically generating command objects for madeleine to
+# store.  It works by making a proxy object for all objects of any classes in which it is included.
+# Method calls to these objects are intercepted, and stored as a command before being
+# passed on to the real receiver.
+#
+# There is also a mechanism for specifying which methods not to intercept calls to by using
+# automatic_read_only, and its opposite automatic_read_write.
+#
+# This module is designed to work correctly in the case there are multiple madeleine systems in use by
+# a single program, and is also safe to use with threads.
+#
 # Usage:
 #
 #  require 'madeleine'
@@ -37,7 +48,7 @@ module Madeleine
 
   module Automatic
 #
-# This module should be included in any classes that are to be persisted.
+# This module should be included (at the top) in any classes that are to be persisted.
 # It will intercept method calls and make sure they are converted into commands that are logged by Madeleine.
 # It does this by returning a Prox object that is a proxy for the real object.
 #
@@ -45,6 +56,10 @@ module Madeleine
 # should be made into commands
 #
     module Interceptor
+#
+# When included, redefine new so that we can return a Prox object instead, and define methods to handle
+# keeping track of which methods are read only
+#
       def self.included(klass)
         class <<klass #:nodoc:
           alias_method :_old_new, :new
@@ -54,11 +69,15 @@ module Madeleine
           def new(*args, &block)
             Prox.new(_old_new(*args, &block))
           end
-
+#
+# Called when a method added - remember symbol if read only 
+#
           def method_added(symbol)
             @@read_only_methods << symbol if @@auto_read_only_flag
           end
-
+#
+# Set the read only flag, or add read only methods
+#
           def automatic_read_only(*list)
             if (list == [])
               @@auto_read_only_flag = true
@@ -66,7 +85,9 @@ module Madeleine
               list.each {|s| @@read_only_methods << s}
             end
           end
-
+#
+# Clear the read only flag, or remove read only methods
+#
           def automatic_read_write(*list)
             if (list == [])
               @@auto_read_only_flag = false
@@ -77,7 +98,9 @@ module Madeleine
 
         end
       end
-
+#
+# Return the list of read only methods so Prox#method_missing can find what to and what not to make into a command
+#
       def read_only_methods
         @@read_only_methods
       end
