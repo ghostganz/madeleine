@@ -75,15 +75,15 @@ module Madeleine
       end
     end
 
+    #
+    # Internal classes below
+    #
+
     class TimeOptimizingCommandLogFactory
       def create_log(directory_name)
         TimeOptimizingCommandLog.new(directory_name)
       end
     end
-
-    #
-    # Internal classes below
-    #
 
     class TimeOptimizingCommandLog < CommandLog
 

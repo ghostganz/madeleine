@@ -375,6 +375,49 @@ class ClockedSystemTest < Test::Unit::TestCase
 end
 
 
+class CustomMarshallerTest < Test::Unit::TestCase
+
+  def teardown
+    Dir.foreach(prevalence_base) do |file|
+      next if file == "."
+      next if file == ".."
+      File.delete(prevalence_base + File::SEPARATOR + file)
+    end
+    Dir.delete(prevalence_base)
+  end
+
+  def prevalence_base
+    "custom-marshaller-test"
+  end
+
+  def test_changing_marshaller
+    @log = ""
+    system = "hello world"
+    marshaller = self
+    target = Madeleine::SnapshotMadeleine.new(system, prevalence_base, marshaller)
+    target.take_snapshot
+    assert_equal("dump ", @log)
+    target = nil
+
+    Madeleine::SnapshotMadeleine.new(system, prevalence_base, marshaller)
+    assert_equal("dump load ", @log)
+
+  end
+
+  def load(io)
+    @log << "load "
+    assert_equal("dump data", io.read())
+  end
+
+  def dump(system, io)
+    @log << "dump "
+    assert_equal("hello world", system)
+    io.write("dump data")
+  end
+
+end
+
+
 suite = Test::Unit::TestSuite.new("Madeleine")
 suite << NumberedFileTest.suite
 suite << CommandLogTest.suite
@@ -385,6 +428,7 @@ suite << TimeTest.suite
 suite << TimeOptimizingCommandLogTest.suite
 suite << CommandVerificationTest.suite
 suite << ClockedSystemTest.suite
+suite << CustomMarshallerTest.suite
 
 require 'test/unit/ui/console/testrunner'
 Test::Unit::UI::Console::TestRunner.run(suite)

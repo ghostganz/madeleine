@@ -13,8 +13,9 @@ module Madeleine
   class SnapshotMadeleine
     attr_reader :system
 
-    def initialize(new_system, directory_name)
+    def initialize(new_system, directory_name, marshaller=Marshal)
       @directory_name = directory_name
+      @marshaller = marshaller
       ensure_directory_exists
       recover_system(new_system)
       @logger = Logger.new(directory_name, log_factory)
@@ -32,7 +33,7 @@ module Madeleine
     def take_snapshot
       @lock.synchronize {
         @logger.close
-        Snapshot.new(@directory_name, system).take
+        Snapshot.new(@directory_name, system, @marshaller).take
         @logger.reset
       }
     end
@@ -50,9 +51,9 @@ module Madeleine
     def recover_system(new_system)
       id = Snapshot.highest_id(@directory_name)
       if id > 0
-        snapshot_file = NumberedFile.new(@directory_name, "snapshot", id).name
+        snapshot_file = SnapshotFile.new(@directory_name, id).name
         open(snapshot_file) {|snapshot|
-          @system = Marshal.load(snapshot)
+          @system = @marshaller.load(snapshot)
         }
       else
         @system = new_system
@@ -218,8 +219,8 @@ module Madeleine
       highest
     end
 
-    def initialize(directory_name, system)
-      @directory_name, @system = directory_name, system
+    def initialize(directory_name, system, marshaller)
+      @directory_name, @system, @marshaller = directory_name, system, marshaller
     end
 
     def take
@@ -227,7 +228,7 @@ module Madeleine
                                        Snapshot.highest_id(@directory_name) + 1)
       name = numbered_file.name
       open(name + '.tmp', 'w') {|snapshot|
-        Marshal.dump(@system, snapshot)
+        @marshaller.dump(@system, snapshot)
         snapshot.flush
         snapshot.fsync
       }
