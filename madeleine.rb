@@ -8,6 +8,123 @@ module Madeleine
 
   FILE_COUNTER_SIZE = 21
 
+  class SnapshotPrevayler
+    attr_reader :system
+
+    def initialize(new_system, directory_name)
+      @directory_name = directory_name
+      ensure_directory_exists
+      recover_system(new_system)
+      @logger = Logger.new(directory_name)
+      @lock = Mutex.new
+    end
+
+    def execute_command(command)
+      @lock.synchronize {
+        @logger.store(command)
+        execute_without_storing(command)
+      }
+    end
+
+    def take_snapshot
+      @lock.synchronize {
+        @logger.close
+        Snapshot.new(@directory_name, system).take
+        @logger.reset
+      }
+    end
+
+    private
+
+    def execute_without_storing(command)
+      command.execute(system)
+    end
+
+    def recover_system(new_system)
+      id = Snapshot.highest_id(@directory_name)
+      if id > 0
+        snapshot_file = NumberedFile.new(@directory_name, "snapshot", id).to_s
+        open(snapshot_file) {|snapshot|
+          @system = Marshal.load(snapshot)
+        }
+      else
+        @system = new_system
+      end
+
+      Dir.foreach(@directory_name) {|file_name|
+        if CommandLog.command_file?(file_name)
+          open(@directory_name + File::SEPARATOR + file_name) {|log|
+            recover_log(log)
+          }
+        end
+      }
+    end
+
+    def recover_log(log)
+      while ! log.eof?
+        command = Marshal.load(log)
+        execute_without_storing(command)
+      end
+    end
+
+    def ensure_directory_exists
+      if ! File.exist?(@directory_name)
+        Dir.mkdir(@directory_name)
+      end
+    end
+  end
+
+  class TimeActor
+
+    class << self
+      def launch(prevayler, delay=1.0)
+        result = new(prevayler, delay)
+        result
+      end
+    end
+
+    def destroy
+      @is_destroyed = true
+      @thread.wakeup
+    end
+
+    private
+
+    def initialize(prevayler, delay)
+      @prevayler = prevayler
+      @is_destroyed = false
+      launch(delay)
+    end
+
+    def launch(delay=1.0)
+      @thread = Thread.new {
+        until @is_destroyed
+          @prevayler.execute_command(Tick.new(Time.now))
+          sleep(delay)
+        end
+      }
+    end
+  end
+
+  class ClockedSystem
+
+    def initialize
+      @clock = Clock.new
+    end
+
+    def time
+      @clock.time
+    end
+
+    def forward_clock_to(newTime)
+      @clock.forward_to(newTime)
+    end
+  end
+
+  #
+  # Internal classes below
+  #
+
   class CommandLog
     class << self
 
@@ -78,7 +195,6 @@ module Madeleine
     end
   end
 
-
   class Snapshot
 
     class << self
@@ -122,73 +238,6 @@ module Madeleine
     end
   end
 
-
-  class SnapshotPrevayler
-    attr_reader :system
-
-    def initialize(new_system, directory_name)
-      @directory_name = directory_name
-      ensure_directory_exists
-      recover_system(new_system)
-      @logger = Logger.new(directory_name)
-      @lock = Mutex.new
-    end
-
-    def execute_command(command)
-      @lock.synchronize {
-        @logger.store(command)
-        execute_without_storing(command)
-      }
-    end
-
-    def take_snapshot
-      @lock.synchronize {
-        @logger.close
-        Snapshot.new(@directory_name, system).take
-        @logger.reset
-      }
-    end
-
-    private
-
-    def execute_without_storing(command)
-      command.execute(system)
-    end
-
-    def recover_system(new_system)
-      id = Snapshot.highest_id(@directory_name)
-      if id > 0
-        snapshot_file = NumberedFile.new(@directory_name, "snapshot", id).to_s
-        open(snapshot_file) {|snapshot|
-          @system = Marshal.load(snapshot)
-        }
-      else
-        @system = new_system
-      end
-
-      Dir.foreach(@directory_name) {|file_name|
-        if CommandLog.command_file?(file_name)
-          open(@directory_name + File::SEPARATOR + file_name) {|log|
-            recover_log(log)
-          }
-        end
-      }
-    end
-
-    def recover_log(log)
-      while ! log.eof?
-        command = Marshal.load(log)
-        execute_without_storing(command)
-      end
-    end
-
-    def ensure_directory_exists
-      if ! File.exist?(@directory_name)
-        Dir.mkdir(@directory_name)
-      end
-    end
-  end
-
   class NumberedFile
 
     def initialize(path, name, id)
@@ -219,39 +268,6 @@ module Madeleine
     end
   end
 
-  class TimeActor
-
-    class << self
-      def launch(prevayler, delay=1.0)
-        result = new(prevayler, delay)
-        result
-      end
-    end
-
-    def destroy
-      @is_destroyed = true
-      @thread.wakeup
-    end
-
-    private
-
-    def initialize(prevayler, delay)
-      @prevayler = prevayler
-      @is_destroyed = false
-      launch(delay)
-    end
-
-    def launch(delay=1.0)
-      @thread = Thread.new {
-        until @is_destroyed
-          @prevayler.execute_command(Tick.new(Time.now))
-          sleep(delay)
-        end
-      }
-    end
-
-  end
-
   class Tick
 
     def initialize(time)
@@ -260,21 +276,6 @@ module Madeleine
 
     def execute(system)
       system.forward_clock_to(@time)
-    end
-  end
-
-  class ClockedSystem
-
-    def initialize
-      @clock = Clock.new
-    end
-
-    def time
-      @clock.time
-    end
-
-    def forward_clock_to(newTime)
-      @clock.forward_to(newTime)
     end
   end
 end
