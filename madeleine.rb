@@ -103,6 +103,17 @@ module Madeleine
 
     def initialize(path, id)
       super(path, "command_log", id)
+      @file = open(name, 'w')
+    end
+
+    def close
+      @file.close
+    end
+
+    def store(command)
+      Marshal.dump(command, @file)
+      @file.flush
+      @file.fsync
     end
   end
 
@@ -119,9 +130,7 @@ module Madeleine
     end
 
     def store(command)
-      Marshal.dump(command, @log)
-      @log.flush
-      @log.fsync
+      @log.store(command)
     end
 
     def close
@@ -153,8 +162,7 @@ module Madeleine
     end
 
     def open_new_log
-      name = CommandLog.new(@directory_name, highest_log + 1)
-      @log = open(name.name, 'w')
+      @log = CommandLog.new(@directory_name, highest_log + 1)
     end
   end
 
