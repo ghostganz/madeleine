@@ -1,0 +1,20 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>included (Madeleine::Automatic::Interceptor)</title>
+<link rel=StyleSheet href="../../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body bgcolor="white">
+<pre><span class="cmt"># File lib/madeleine/automatic.rb, line 37</span>
+        <span class="kw">def</span> included(klass)
+          <span class="kw">class</span> &lt;&lt;klass
+            alias_method :_old_new, :new
+            <span class="kw">def</span> new(*args, &amp;block)
+              Prox.new(_old_new(*args, &amp;block))
+            <span class="kw">end</span>
+          <span class="kw">end</span>
+        <span class="kw">end</span></pre>
+</body>
+</html>

@@ -1,0 +1,28 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>method_missing (Madeleine::Automatic::Prox)</title>
+<link rel=StyleSheet href="../../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body bgcolor="white">
+<pre><span class="cmt"># File lib/madeleine/automatic.rb, line 89</span>
+      <span class="kw">def</span> method_missing(symbol, *args, &amp;block)
+<span class="cmt">#      print &quot;Sending #{symbol} to #{@thing.to_s}, myid=#{@myid}, sysid=#{@sysid}\n&quot;</span>
+        raise NoMethodError, <span class="str">&quot;Undefined method&quot;</span> <span class="kw">unless</span> @thing.respond_to?(symbol)
+        <span class="kw">if</span> (Thread.current[:system])
+          @thing.send(symbol, *args, &amp;block)
+        <span class="kw">else</span>
+          raise <span class="str">&quot;Cannot make command with block&quot;</span> <span class="kw">if</span> block_given?
+          Thread.current[:system] = AutomaticSnapshotMadeleine.systems[@sysid]
+          <span class="kw">begin</span>
+            result = Thread.current[:system].execute_command(Command.new(symbol, @myid, @sysid, *args))
+          <span class="kw">ensure</span>
+            Thread.current[:system] = <span class="kw">false</span>
+          <span class="kw">end</span>
+          result
+        <span class="kw">end</span>
+      <span class="kw">end</span></pre>
+</body>
+</html>

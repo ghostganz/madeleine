@@ -1,0 +1,99 @@
+
+body,td,p { font-family: Verdana, Arial, Helvetica, sans-serif; 
+       color: #000040;
+}
+
+.attr-rw { font-size: x-small; color: #444488 }
+
+.title-row { background: #0000aa;
+             color:      #eeeeff;
+}
+
+.big-title-font { color: white;
+                  font-family: Verdana, Arial, Helvetica, sans-serif;
+                  font-size: large; 
+                  height: 50px}
+
+.small-title-font { color: aqua;
+                    font-family: Verdana, Arial, Helvetica, sans-serif;
+                    font-size: xx-small; }
+
+.aqua { color: aqua }
+
+.method-name, attr-name {
+      font-family: monospace; font-weight: bold;
+}
+
+.tablesubtitle, .tablesubsubtitle {
+   width: 100%;
+   margin-top: 1ex;
+   margin-bottom: .5ex;
+   padding: 5px 0px 5px 20px;
+   font-size: large;
+   color: aqua;
+   background: #3333cc;
+}
+
+.name-list {
+  font-family: monospace;
+  margin-left: 40px;
+  margin-bottom: 2ex;
+  line-height: 140%;
+}
+
+.description {
+  margin-left: 40px;
+  margin-top: -2ex;
+  margin-bottom: 2ex;
+}
+
+.description p {
+  line-height: 140%;
+}
+
+.aka {
+  margin-left: 40px;
+  margin-bottom: 2ex;
+  line-height: 100%;
+  font-size:   small;
+  color:       #808080;
+}
+
+.methodtitle {
+  font-size: medium;
+  text-decoration: none;
+  color: #0000AA;
+  background: white; 
+}
+
+.paramsig {
+   font-size: small;
+}
+
+.srcbut { float: right }
+
+pre { font-size: 1.2em; }
+tt  { font-size: 1.2em; }
+
+pre.source {
+  border-style: groove;
+  background-color: #ddddff;
+  margin-left:  40px;
+  padding: 1em 0em 1em 2em;
+}
+
+.classlist {
+  margin-left: 40px;
+  margin-bottom: 2ex;
+  line-height: 140%;
+}
+
+li {
+  display:    list-item;
+  margin-top: .6em;
+}
+
+.kw { color: #3333FF; font-weight: bold }
+.cmt { color: green; font-style: italic }
+.str { color: #662222; font-style: italic }
+.re  { color: #662222; }

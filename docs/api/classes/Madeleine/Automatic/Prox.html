@@ -1,0 +1,157 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: Madeleine::Automatic::Prox</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel=StyleSheet href="../../.././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript" language="JavaScript">
+  <!--
+  function popCode(url) {
+    window.open(url, "Code", 
+          "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+  //-->
+  </script>
+</head>
+
+<body bgcolor="white">
+
+<table summary="Information on class" width="100%" border="0" cellspacing="0">
+ <tr class="title-row">
+ <td class="big-title-font">
+   <sup><font color="aqua">Class</font></sup> Madeleine::Automatic::Prox
+ </td>
+ <td align="right">
+   <table summary="layout" cellspacing="0" cellpadding="2">
+     <tr valign="top">
+      <td class="small-title-font">In:</td>
+      <td class="small-title-font">
+        <a href="../../../files/lib/madeleine/automatic_rb.html" class="aqua">
+lib/madeleine/automatic.rb
+         </a>
+<br />
+      </td>
+     </tr>
+     <tr>
+      <td class="small-title-font">Parent:</td>
+      <td class="small-title-font">
+Object
+      </td>
+     </tr>
+   </table>
+  </td>
+  </tr>
+</table>
+  <!-- banner header -->
+
+
+
+<div class="description"><p>
+A <a href="Prox.html">Prox</a> object is generated and returned by <a
+href="Interceptor.html">Interceptor</a> each time a system object is
+created.
+</p>
+</div>
+
+
+<table summary="Methods" cellpadding="5" width="100%">
+<tr><td class="tablesubtitle">Methods</td></tr>
+</table>
+<div class="name-list">
+<a href="#M000012">_dump</a>&nbsp; &nbsp;
+<a href="#M000013">_load</a>&nbsp; &nbsp;
+<a href="#M000011">method_missing</a>&nbsp; &nbsp;
+<a href="#M000010">new</a>&nbsp; &nbsp;
+</div>
+
+
+<table summary="Attributes" cellpadding="5" width="100%">
+<tr><td class="tablesubtitle">Attributes</td></tr>
+</table>
+<table summary="Attribute details" cellspacing="5">
+     <tr valign="top">
+       <td class="attr-name">myid</td>
+       <td align="center" class="attr-rw">&nbsp;[RW]&nbsp;</td>
+       <td></td>
+     </tr>
+     <tr valign="top">
+       <td class="attr-name">sysid</td>
+       <td align="center" class="attr-rw">&nbsp;[RW]&nbsp;</td>
+       <td></td>
+     </tr>
+     <tr valign="top">
+       <td class="attr-name">thing</td>
+       <td align="center" class="attr-rw">&nbsp;[RW]&nbsp;</td>
+       <td></td>
+     </tr>
+</table>
+
+
+
+<table summary="Method list" cellpadding="5" width="100%">
+<tr><td class="tablesubtitle">Public Class methods</td></tr>
+</table>
+<table summary="method"  width="100%" cellspacing="0" cellpadding="5" border="0">
+<tr><td class="methodtitle">
+<a name="M000010"></a>
+<a href="Prox.src/M000010.html" target="Code" class="methodtitle"
+ onClick="popCode('Prox.src/M000010.html');return false;">
+<b>new</b>(thing)
+</a>
+</td></tr>
+</table>
+<table summary="method"  width="100%" cellspacing="0" cellpadding="5" border="0">
+<tr><td class="methodtitle">
+<a name="M000013"></a>
+<a href="Prox.src/M000013.html" target="Code" class="methodtitle"
+ onClick="popCode('Prox.src/M000013.html');return false;">
+<b>_load</b>(str)
+</a>
+</td></tr>
+</table>
+<div class="description">
+<p>
+Custom marshalling - restore a <a href="Prox.html">Prox</a> object.
+</p>
+</div>
+<table summary="Method list" cellpadding="5" width="100%">
+<tr><td class="tablesubtitle">Public Instance methods</td></tr>
+</table>
+<table summary="method"  width="100%" cellspacing="0" cellpadding="5" border="0">
+<tr><td class="methodtitle">
+<a name="M000011"></a>
+<a href="Prox.src/M000011.html" target="Code" class="methodtitle"
+ onClick="popCode('Prox.src/M000011.html');return false;">
+<b>method_missing</b>(symbol, *args, &amp;block)
+</a>
+</td></tr>
+</table>
+<div class="description">
+<p>
+This automatically makes and executes a new <a
+href="Command.html">Command</a> if a method is called from outside the
+system.
+</p>
+</div>
+<table summary="method"  width="100%" cellspacing="0" cellpadding="5" border="0">
+<tr><td class="methodtitle">
+<a name="M000012"></a>
+<a href="Prox.src/M000012.html" target="Code" class="methodtitle"
+ onClick="popCode('Prox.src/M000012.html');return false;">
+<b>_dump</b>(depth)
+</a>
+</td></tr>
+</table>
+<div class="description">
+<p>
+Custom marshalling - this adds the internal id (myid) and the system id to
+a marshall of the object we are the proxy for. We take care to not marshal
+the same object twice, so circular references will work.
+</p>
+</div>
+
+</body>
+</html>

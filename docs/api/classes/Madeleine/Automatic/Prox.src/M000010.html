@@ -1,0 +1,20 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>new (Madeleine::Automatic::Prox)</title>
+<link rel=StyleSheet href="../../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body bgcolor="white">
+<pre><span class="cmt"># File lib/madeleine/automatic.rb, line 77</span>
+      <span class="kw">def</span> initialize(thing)
+        <span class="kw">if</span> (thing)
+          raise <span class="str">&quot;App object created outside of app&quot;</span> <span class="kw">unless</span> Thread.current[:system]
+          @sysid = Thread.current[:system].sysid
+          @myid = Thread.current[:system].add(<span class="kw">self</span>)
+          @thing = thing
+        <span class="kw">end</span>
+      <span class="kw">end</span></pre>
+</body>
+</html>

@@ -1,0 +1,22 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>register_sysid (Madeleine::Automatic::AutomaticSnapshotMadeleine)</title>
+<link rel=StyleSheet href="../../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body bgcolor="white">
+<pre><span class="cmt"># File lib/madeleine/automatic.rb, line 209</span>
+      <span class="kw">def</span> AutomaticSnapshotMadeleine.register_sysid(sid)
+        Thread.critical = <span class="kw">true</span>
+        @@systems ||= {}  <span class="cmt"># holds systems by sysid</span>
+        @@systems[sid] = Thread.current[:system]
+        Thread.critical = <span class="kw">false</span>
+        @@systems[sid].sysid = sid 
+        @@systems[sid].list.each {|o|  <span class="cmt"># set all the prox objects that already exist to have the right sysid</span>
+                         ObjectSpace._id2ref(o[1]).sysid = sid
+                       }
+      <span class="kw">end</span></pre>
+</body>
+</html>

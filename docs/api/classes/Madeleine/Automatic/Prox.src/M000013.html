@@ -1,0 +1,21 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>_load (Madeleine::Automatic::Prox)</title>
+<link rel=StyleSheet href="../../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body bgcolor="white">
+<pre><span class="cmt"># File lib/madeleine/automatic.rb, line 125</span>
+      <span class="kw">def</span> Prox._load(str)
+        x = Prox.new(<span class="kw">nil</span>)
+        a = str.unpack(<span class="str">&quot;A8A30a*&quot;</span>)
+        x.myid = a[0].to_i
+        x.sysid = a[1]
+        x = Thread.current[:system].restore(x)
+        x.thing = Thread.current[:system].marshaller.load(a[2]) <span class="kw">if</span> (a[2] &gt; <span class="str">&quot;&quot;</span>)
+        x
+      <span class="kw">end</span></pre>
+</body>
+</html>

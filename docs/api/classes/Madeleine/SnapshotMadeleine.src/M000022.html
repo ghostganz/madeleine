@@ -1,0 +1,20 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>execute_command (Madeleine::SnapshotMadeleine)</title>
+<link rel=StyleSheet href="../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body bgcolor="white">
+<pre><span class="cmt"># File lib/madeleine.rb, line 62</span>
+    <span class="kw">def</span> execute_command(command)
+      verify_command_sane(command)
+      synchronize {
+        raise <span class="str">&quot;closed&quot;</span> <span class="kw">if</span> @closed
+        @logger.store(command)
+        execute_without_storing(command)
+      }
+    <span class="kw">end</span></pre>
+</body>
+</html>
