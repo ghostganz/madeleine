@@ -41,6 +41,18 @@ class Addition
   end
 end
 
+
+module TestUtils
+  def delete_directory(directory_name)
+    Dir.foreach(directory_name) do |file|
+      next if file == "."
+      next if file == ".."
+      File.delete(directory_name + File::SEPARATOR + file)
+    end
+    Dir.delete(directory_name)
+  end
+end
+
 class PersistenceTest < Test::Unit::TestCase
 
   def setup
@@ -372,8 +384,7 @@ class CommandVerificationTest < Test::Unit::TestCase
   end
 
   def test_broken_command
-    system = :hello
-    target = Madeleine::SnapshotMadeleine.new("foo") { system }
+    target = Madeleine::SnapshotMadeleine.new("foo") { :a_system }
     assert_raises(Madeleine::InvalidCommandException) do
       target.execute_command(:not_a_command)
     end
@@ -382,14 +393,10 @@ end
 
 
 class CustomMarshallerTest < Test::Unit::TestCase
+  include TestUtils
 
   def teardown
-    Dir.foreach(prevalence_base) do |file|
-      next if file == "."
-      next if file == ".."
-      File.delete(prevalence_base + File::SEPARATOR + file)
-    end
-    Dir.delete(prevalence_base)
+    delete_directory(prevalence_base)
   end
 
   def prevalence_base
@@ -398,14 +405,13 @@ class CustomMarshallerTest < Test::Unit::TestCase
 
   def test_changing_marshaller
     @log = ""
-    system = "hello world"
     marshaller = self
-    target = Madeleine::SnapshotMadeleine.new(prevalence_base, marshaller) { system }
+    target = Madeleine::SnapshotMadeleine.new(prevalence_base, marshaller) { "hello world" }
     target.take_snapshot
     assert_equal("dump ", @log)
     target = nil
 
-    Madeleine::SnapshotMadeleine.new(prevalence_base, marshaller) { system }
+    Madeleine::SnapshotMadeleine.new(prevalence_base, marshaller) { flunk() }
     assert_equal("dump load ", @log)
   end
 
@@ -419,7 +425,33 @@ class CustomMarshallerTest < Test::Unit::TestCase
     assert_equal("hello world", system)
     io.write("dump data")
   end
+end
 
+
+class ErrorRaisingCommand
+  def execute(system)
+    raise "woo-hoo"
+  end
+end
+
+class ErrorHandlingTest < Test::Unit::TestCase
+  include TestUtils
+
+  def teardown
+    delete_directory(prevalence_base)
+  end
+
+  def prevalence_base
+    "error-handling-base"
+  end
+
+  def test_exception_in_command
+    madeleine = Madeleine::SnapshotMadeleine.new(prevalence_base) { "hello" }
+    assert_raises(RuntimeError) do
+      madeleine.execute_command(ErrorRaisingCommand.new)
+    end
+    Madeleine::SnapshotMadeleine.new(prevalence_base) { "hello" }
+  end
 end
 
 
@@ -433,6 +465,7 @@ suite << TimeTest.suite
 suite << TimeOptimizingCommandLogTest.suite
 suite << CommandVerificationTest.suite
 suite << CustomMarshallerTest.suite
+suite << ErrorHandlingTest.suite
 
 require 'test/unit/ui/console/testrunner'
 Test::Unit::UI::Console::TestRunner.run(suite)

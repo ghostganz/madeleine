@@ -20,6 +20,7 @@ module Madeleine
       recover_system(new_system_block)
       @logger = Logger.new(directory_name, log_factory)
       @lock = Mutex.new
+      @in_recovery = false
     end
 
     def execute_command(command)
@@ -45,10 +46,15 @@ module Madeleine
     end
 
     def execute_without_storing(command)
-      command.execute(system)
+      begin
+        command.execute(system)
+      rescue
+        raise unless @in_recovery
+      end
     end
 
     def recover_system(new_system_block)
+      @in_recovery = true
       id = Snapshot.highest_id(@directory_name)
       if id > 0
         snapshot_file = SnapshotFile.new(@directory_name, id).name
@@ -64,6 +70,7 @@ module Madeleine
           recover_log(log)
         }
       }
+      @in_recovery = false
     end
 
     def recover_log(log)
