@@ -1,5 +1,6 @@
 
-
+    * Bug fix: Error handling when replaying logged commands.
+    * New system through block instead of argument (API change)
     * Works in $SAFE = 1
 
 Madeleine 0.2:

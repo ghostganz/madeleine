@@ -9,8 +9,12 @@ module Madeleine
 
     class ClockedSnapshotMadeleine < SnapshotMadeleine
 
-      def initialize(directory_name, &new_system_block)
-        super(directory_name, &new_system_block)
+      def initialize(directory_name, marshaller=nil, &new_system_block)
+        if marshaller.nil?
+          super(directory_name, &new_system_block)
+        else
+          super(directory_name, marshaller, &new_system_block)
+        end
       end
 
       def log_factory

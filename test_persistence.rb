@@ -47,7 +47,8 @@ module TestUtils
     Dir.foreach(directory_name) do |file|
       next if file == "."
       next if file == ".."
-      File.delete(directory_name + File::SEPARATOR + file)
+      assert(File.delete(directory_name + File::SEPARATOR + file) == 1,
+             "Unable to delete #{file}")
     end
     Dir.delete(directory_name)
   end
@@ -403,15 +404,19 @@ class CustomMarshallerTest < Test::Unit::TestCase
     "custom-marshaller-test"
   end
 
+  def madeleine_class
+    Madeleine::SnapshotMadeleine
+  end
+
   def test_changing_marshaller
     @log = ""
     marshaller = self
-    target = Madeleine::SnapshotMadeleine.new(prevalence_base, marshaller) { "hello world" }
+    target = madeleine_class.new(prevalence_base, marshaller) { "hello world" }
     target.take_snapshot
     assert_equal("dump ", @log)
     target = nil
 
-    Madeleine::SnapshotMadeleine.new(prevalence_base, marshaller) { flunk() }
+    madeleine_class.new(prevalence_base, marshaller) { flunk() }
     assert_equal("dump load ", @log)
   end
 
@@ -424,6 +429,18 @@ class CustomMarshallerTest < Test::Unit::TestCase
     @log << "dump "
     assert_equal("hello world", system)
     io.write("dump data")
+  end
+end
+
+
+class ClockedCustomMarshallerTest < CustomMarshallerTest
+
+  def prevalence_base
+    "clocked-custom-marshaller-test"
+  end
+
+  def madeleine_class
+    Madeleine::Clock::ClockedSnapshotMadeleine
   end
 end
 
@@ -465,6 +482,7 @@ suite << TimeTest.suite
 suite << TimeOptimizingCommandLogTest.suite
 suite << CommandVerificationTest.suite
 suite << CustomMarshallerTest.suite
+suite << ClockedCustomMarshallerTest.suite
 suite << ErrorHandlingTest.suite
 
 require 'test/unit/ui/console/testrunner'
