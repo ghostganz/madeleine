@@ -399,14 +399,7 @@ module Madeleine
             zio.finish
             io.rewind
             if (detected_zmarshaller)
-              if (detected_zmarshaller == SOAP::Marshal)
-                zio = Zlib::GzipReader.new(io)
-                xml = zio.read  # REXML won't read from a gzip reader, but it will load a string
-                zio.finish
-                SOAP::Marshal.load(xml)
-              else
-                ZMarshal.new(detected_zmarshaller).load(io)
-              end
+              ZMarshal.new(detected_zmarshaller).load(io)
             else
               raise e
             end
