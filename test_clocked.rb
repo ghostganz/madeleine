@@ -97,26 +97,27 @@ class TimeTest < Test::Unit::TestCase
 end
 
 
-class TimeOptimizingCommandLogTest < CommandLogTest
+class TimeOptimizingLoggerTest < Test::Unit::TestCase
 
   def setup
-    @target = Madeleine::Clock::TimeOptimizingCommandLog.new(".")
+    @target = Madeleine::Clock::TimeOptimizingLogger.new("some_directory", self)
+    @log = []
+    def @log.store(command)
+      self << command
+    end
   end
 
   def test_optimizing_ticks
-    f = open(expected_file_name, 'r')
-    assert(f.stat.file?)
-    assert_equal(0, f.stat.size)
+    assert_equal(0, @log.size)
     @target.store(Madeleine::Clock::Tick.new(Time.at(3)))
-    assert_equal(0, f.stat.size)
+    assert_equal(0, @log.size)
     @target.store(Madeleine::Clock::Tick.new(Time.at(22)))
-    assert_equal(0, f.stat.size)
+    assert_equal(0, @log.size)
     @target.store(Addition.new(100))
-    tick = Marshal.load(f)
-    assert(tick.kind_of?(Madeleine::Clock::Tick))
-    assert_equal(22, value_of_tick(tick))
-    assert_equal(100, Marshal.load(f).value)
-    assert_equal(f.stat.size, f.tell)
+    assert_kind_of(Madeleine::Clock::Tick, @log[0])
+    assert_equal(22, value_of_tick(@log[0]))
+    assert_equal(100, @log[1].value)
+    assert_equal(2, @log.size)
   end
 
   def value_of_tick(tick)
@@ -129,6 +130,12 @@ class TimeOptimizingCommandLogTest < CommandLogTest
     end
     tick.execute(self)
     @clock.value
+  end
+
+  # Self-shunt
+  def create_log(directory_name)
+    assert_equal("some_directory", directory_name)
+    @log
   end
 
   # Self-shunt
@@ -153,6 +160,6 @@ end
 def add_clocked_tests(suite)
   suite << ClockedPersistenceTest.suite
   suite << TimeTest.suite
-  suite << TimeOptimizingCommandLogTest.suite
+  suite << TimeOptimizingLoggerTest.suite
   suite << ClockedCustomMarshallerTest.suite
 end

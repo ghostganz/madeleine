@@ -21,7 +21,7 @@ module Madeleine
       @lock = Mutex.new
       ensure_directory_exists
       recover_system(new_system_block)
-      @logger = Logger.new(directory_name, log_factory)
+      @logger = create_logger(directory_name, log_factory)
     end
 
     def execute_command(command)
@@ -49,6 +49,10 @@ module Madeleine
     end
 
     private
+
+    def create_logger(directory_name, log_factory)
+      Logger.new(directory_name, log_factory)
+    end
 
     def log_factory
       DefaultLogFactory.new
@@ -192,10 +196,9 @@ module Madeleine
     end
 
     def close
-      unless @log.nil?
-        @log.close
-        @log = nil
-      end
+      return if @log.nil?
+      @log.close
+      @log = nil
     end
 
     private

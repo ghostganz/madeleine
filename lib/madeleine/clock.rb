@@ -17,8 +17,10 @@ module Madeleine
         end
       end
 
-      def log_factory
-        TimeOptimizingCommandLogFactory.new
+      private
+
+      def create_logger(directory_name, log_factory)
+        TimeOptimizingLogger.new(directory_name, log_factory)
       end
     end
 
@@ -83,16 +85,10 @@ module Madeleine
     # Internal classes below
     #
 
-    class TimeOptimizingCommandLogFactory
-      def create_log(directory_name)
-        TimeOptimizingCommandLog.new(directory_name)
-      end
-    end
+    class TimeOptimizingLogger < Logger
 
-    class TimeOptimizingCommandLog < CommandLog
-
-      def initialize(path)
-        super(path)
+      def initialize(directory_name, log_factory)
+        super
         @pending_tick = nil
       end
 
@@ -108,6 +104,7 @@ module Madeleine
         end
       end
     end
+
 
     class Tick
 
