@@ -214,7 +214,7 @@ class TimeTest < Test::Unit::TestCase
     target = Madeleine::Clock::TimeActor.launch(self, 0.01)
 
     # When launch() has returned it should have sent
-    # one synchronous clock-tick
+    # one synchronous clock-tick before it went to sleep
     assert_equal(1, @forward_calls)
 
     sleep(0.1)

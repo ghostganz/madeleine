@@ -2,25 +2,7 @@
 <html>
 <head>
 <title>API - Madeleine</title>
-<style>
-p {
-    width: 70ex
-}
-h1 {
-    font-family: verdana,arial,helvetica,sans-serif;
-}
-h2 {
-    font-family: verdana,arial,helvetica,sans-serif;
-}
-.classMethod {
-    font-family: courier,monospace;
-    font-weight: bold;
-}
-
-.instanceMethod {
-    font-family: courier,sans-serif;
-}
-</style>
+<link type="text/css" href="docs.css" rel="stylesheet">
 </head>
 
 <body>
@@ -36,7 +18,10 @@ h2 {
   <li><code>directory_name</code> - Storage directory to use. Will be created if needed.
 </ul>
 
-<p>[... fixme ...]
+<p>Creates a new Madeleine instance. If there is a snapshot available
+then the system will be created from that, otherwise
+<code>new_system</code> will be used. The state of the system will
+then be restored from the command logs.
 
 <div class="instanceMethod">execute_command(aCommand)</div>
 
