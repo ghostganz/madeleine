@@ -19,6 +19,7 @@ module Madeleine
 
   require 'thread'
   require 'sync'
+  require 'madeleine/files'
 
   MADELEINE_VERSION = "0.7"
 
@@ -216,7 +217,7 @@ module Madeleine
 
     def recover_logs(executer)
       executer.recovery {
-        CommandLog.log_file_names(@directory_name).each {|file_name|
+        CommandLog.log_file_names(@directory_name, FileService.new).each {|file_name|
           open(@directory_name + File::SEPARATOR + file_name, "rb") {|log|
             recover_log(executer, log)
           }
@@ -251,9 +252,9 @@ module Madeleine
 
   class CommandLog #:nodoc:
 
-    def self.log_file_names(directory_name)
-      return [] unless File.exist?(directory_name)
-      result = Dir.entries(directory_name).select {|name|
+    def self.log_file_names(directory_name, file_service)
+      return [] unless file_service.exist?(directory_name)
+      result = file_service.dir_entries(directory_name).select {|name|
         name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command_log$/
       }
       result.each {|name| name.untaint }
@@ -261,10 +262,10 @@ module Madeleine
       result
     end
 
-    def initialize(path)
-      id = CommandLog.highest_log(path) + 1
+    def initialize(path, file_service)
+      id = self.class.highest_log(path, file_service) + 1
       numbered_file = NumberedFile.new(path, "command_log", id)
-      @file = open(numbered_file.name, 'wb')
+      @file = file_service.open(numbered_file.name, 'wb')
     end
 
     def close
@@ -277,9 +278,9 @@ module Madeleine
       @file.fsync
     end
 
-    def self.highest_log(directory_name)
+    def self.highest_log(directory_name, file_service)
       highest = 0
-      log_file_names(directory_name).each {|file_name|
+      log_file_names(directory_name, file_service).each {|file_name|
         match = /^(\d{#{FILE_COUNTER_SIZE}})/.match(file_name)
         n = match[1].to_i
         if n > highest
@@ -292,7 +293,7 @@ module Madeleine
 
   class DefaultLogFactory #:nodoc:
     def create_log(directory_name)
-      CommandLog.new(directory_name)
+      CommandLog.new(directory_name, FileService.new)
     end
   end
 
