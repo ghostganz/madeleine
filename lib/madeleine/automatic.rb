@@ -1,3 +1,5 @@
+module Madeleine
+
 # Automatic commands for Madeleine
 #
 # Author::    Stephen Sykes <ruby@stephensykes.com>
@@ -8,23 +10,22 @@
 #
 # Usage:
 #
-# class A
-#   include Madeleine::Automatic::Interceptor
-#   def initialize(param1, ...)
-#   ...
-#   def some_method(paramA, ...)
-#   ...
+#  class A
+#    include Madeleine::Automatic::Interceptor
+#    def initialize(param1, ...)
+#    ...
+#    def some_method(paramA, ...)
+#    ...
 #
-# end
+#  end
 #
-# mad = Madeleine::Automatic::AutomaticSnapshotMadeleine.new("storage_directory") { A.new(param1, ...) }
+#  mad = Madeleine::Automatic::AutomaticSnapshotMadeleine.new("storage_directory") { A.new(param1, ...) }
 #
-# mad.system.some_method(paramA, ...)
+#  mad.system.some_method(paramA, ...)
 #
-# mad.take_snapshot
+#  mad.take_snapshot
 #
 
-module Madeleine
   module Automatic
 #
 # This module shoule be included in any classes that are to be persisted.

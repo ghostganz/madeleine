@@ -85,7 +85,7 @@ module Madeleine
     # Internal classes below
     #
 
-    class TimeOptimizingLogger < Logger
+    class TimeOptimizingLogger < Logger #:nodoc:
 
       def initialize(directory_name, log_factory)
         super
@@ -106,7 +106,7 @@ module Madeleine
     end
 
 
-    class Tick
+    class Tick #:nodoc:
 
       def initialize(time)
         @time = time

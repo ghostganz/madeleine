@@ -6,17 +6,17 @@
 #
 # Usage:
 #
-# madeleine = SnapshotMadeleine.new("my_example_storage") {
-#   SomeExampleApplication.new()
-# }
+#  madeleine = SnapshotMadeleine.new("my_example_storage") {
+#    SomeExampleApplication.new()
+#  }
 #
-# madeleine.execute_command(command)
+#  madeleine.execute_command(command)
 #
-
-require 'thread'
-require 'sync'
 
 module Madeleine
+
+  require 'thread'
+  require 'sync'
 
   MADELEINE_VERSION = "0.4"
 
@@ -27,19 +27,19 @@ module Madeleine
 
     # Creates a new Madeleine instance. If there is a snapshot available
     # then the system will be created from that, otherwise
-    # <code>new_system</code> will be used. The state of the system will
+    # <tt>new_system</tt> will be used. The state of the system will
     # then be restored from the command logs.
     #
     # You can provide your own snapshot marshaller, for instance using
     # YAML or SOAP, instead of Ruby's built-in marshaller. The
-    # <code>snapshot_marshaller</code> must respond to
-    # <code>load(stream)</code> and <code>dump(object, stream)</code>. You
+    # <tt>snapshot_marshaller</tt> must respond to
+    # <tt>load(stream)</tt> and <tt>dump(object, stream)</tt>. You
     # must always use the same marshaller for a system (unless you convert
-    # your snapshot files).
+    # your snapshot files manually).
     #
-    # <li><code>new_system</code> - New system to use if no stored system was found.
-    # <li><code>directory_name</code> - Storage directory to use. Will be created if needed.
-    # <li><code>snapshot_marshaller</code> - Marshaller to use for system snapshots. (Optional)
+    # * <tt>new_system</tt> - New system to use if no stored system was found.
+    # * <tt>directory_name</tt> - Storage directory to use. Will be created if needed.
+    # * <tt>snapshot_marshaller</tt> - Marshaller to use for system snapshots. (Optional)
     def initialize(directory_name, marshaller=Marshal, &new_system_block)
       @directory_name = directory_name
       @marshaller = marshaller
@@ -53,13 +53,13 @@ module Madeleine
 
     # Execute a command with the prevalent system.
     #
-    # Commands must have a method <code>execute(aSystem)</code>.
-    # Otherwise an error, <code>Madeleine::InvalidCommandException</code>,
+    # Commands must have a method <tt>execute(aSystem)</tt>.
+    # Otherwise an error, <tt>Madeleine::InvalidCommandException</tt>,
     # will be raised.
     #
-    # The return value from the command's <code>execute</code> method is returned.
+    # The return value from the command's <tt>execute</tt> method is returned.
     #
-    # <li><code>aCommand</code> - The command to execute on the system.
+    # * <tt>aCommand</tt> - The command to execute on the system.
     def execute_command(command)
       verify_command_sane(command)
       synchronize {
@@ -178,7 +178,7 @@ module Madeleine
 
   FILE_COUNTER_SIZE = 21
 
-  class NumberedFile
+  class NumberedFile #:nodoc:
 
     def initialize(path, name, id)
       @path, @name, @id = path, name, id
@@ -193,7 +193,7 @@ module Madeleine
     end
   end
 
-  class CommandLog < NumberedFile
+  class CommandLog < NumberedFile #:nodoc:
 
     def self.log_file_names(directory_name)
       result = Dir.entries(directory_name).select {|name|
@@ -232,13 +232,13 @@ module Madeleine
     end
   end
 
-  class DefaultLogFactory
+  class DefaultLogFactory #:nodoc:
     def create_log(directory_name)
       CommandLog.new(directory_name)
     end
   end
 
-  class Logger
+  class Logger #:nodoc:
 
     def initialize(directory_name, log_factory)
       @directory_name = directory_name
@@ -278,7 +278,7 @@ module Madeleine
     end
   end
 
-  class SnapshotFile < NumberedFile
+  class SnapshotFile < NumberedFile #:nodoc:
 
     def self.highest_id(directory_name)
       highest = 0
@@ -302,7 +302,7 @@ module Madeleine
     end
   end
 
-  class Snapshot
+  class Snapshot #:nodoc:
 
     def initialize(directory_name, system, marshaller)
       @directory_name, @system, @marshaller = directory_name, system, marshaller
