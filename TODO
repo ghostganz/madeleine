@@ -1,5 +1,5 @@
 
-* Fix broken time-dependent unit test
+- Fix broken time-dependent unit test
 * Rolling snapshots, with age limit
 - Compressed snapshots
 - Full support for YAML snapshots
