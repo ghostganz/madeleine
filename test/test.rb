@@ -389,6 +389,8 @@ require 'test_persistence'
 add_persistence_tests(suite)
 require 'test_platforms'
 add_platforms_tests(suite)
+require 'test_zmarshal'
+add_zmarshal_tests(suite)
 
 require 'test/unit/ui/console/testrunner'
 Test::Unit::UI::Console::TestRunner.run(suite)

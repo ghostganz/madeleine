@@ -5,21 +5,25 @@
 require 'zlib'
 
 module Madeleine
-  module ZMarshal
+  class ZMarshal
 
-    def self.load(stream)
+    def initialize(marshaller=Marshal)
+      @marshaller = marshaller
+    end
+
+    def load(stream)
       zstream = Zlib::GzipReader.new(stream)
       begin
-        return Marshal.load(zstream)
+        return @marshaller.load(zstream)
       ensure
         zstream.finish
       end
     end
 
-    def self.dump(system, stream)
+    def dump(system, stream)
       zstream = Zlib::GzipWriter.new(stream)
       begin
-        Marshal.dump(system, zstream)
+        @marshaller.dump(system, zstream)
       ensure
         zstream.finish
       end
