@@ -91,16 +91,6 @@ module Madeleine
     class TimeOptimizingLogger < ::Madeleine::Logger
     end
 
-    class Tick #:nodoc:
-
-      def initialize(time)
-        @time = time
-      end
-
-      def execute(system)
-        system.clock.forward_to(@time)
-      end
-    end
   end
 end
 

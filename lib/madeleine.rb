@@ -18,11 +18,6 @@ module Madeleine
   require 'thread'
   require 'sync'
 
-  module Clock
-    class Tick
-    end
-  end
-
   MADELEINE_VERSION = "0.4"
 
   class SnapshotMadeleine
@@ -350,6 +345,19 @@ module Madeleine
         snapshot.fsync
       }
       File.rename(name + '.tmp', name)
+    end
+  end
+
+  module Clock #:nodoc:
+    class Tick #:nodoc:
+
+      def initialize(time)
+        @time = time
+      end
+
+      def execute(system)
+        system.clock.forward_to(@time)
+      end
     end
   end
 end
