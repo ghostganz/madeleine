@@ -20,4 +20,4 @@
 * More documentation
 * DRb integration
 * Rollback
-* Handle broken logs?
+* Handle premature EOF in logs
