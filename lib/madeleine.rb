@@ -211,6 +211,7 @@ module Madeleine
         name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command_log$/
       }
       result.each {|name| name.untaint }
+      result.sort!
       result
     end
 

@@ -1,4 +1,8 @@
 
+Madeleine 0.5 (August 31, 2003):
+
+    * Bug fix: Log order on recovery was wrong on some platforms
+      (Reported by IIMA Susumu)
     * No longer requires the system clock to always increase
     * Shared locks for queries
 
