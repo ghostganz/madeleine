@@ -249,7 +249,7 @@ module Madeleine
     end
   end
 
-  class CommandLog < NumberedFile #:nodoc:
+  class CommandLog #:nodoc:
 
     def self.log_file_names(directory_name)
       return [] unless File.exist?(directory_name)
@@ -263,8 +263,8 @@ module Madeleine
 
     def initialize(path)
       id = CommandLog.highest_log(path) + 1
-      super(path, "command_log", id)
-      @file = open(name, 'wb')
+      numbered_file = NumberedFile.new(path, "command_log", id)
+      @file = open(numbered_file.name, 'wb')
     end
 
     def close
@@ -360,9 +360,10 @@ module Madeleine
 
     def self.highest_id(directory_name)
       return 0 unless File.exist?(directory_name)
+      suffix = "snapshot"
       highest = 0
       Dir.foreach(directory_name) {|file_name|
-        match = /^(\d{#{FILE_COUNTER_SIZE}}\.snapshot$)/.match(file_name)
+        match = /^(\d{#{FILE_COUNTER_SIZE}}\.#{suffix}$)/.match(file_name)
         next unless match
         n = match[1].to_i
         if n > highest
