@@ -22,7 +22,7 @@ module Madeleine
 # Should you require it, the snapshots can be stored as yaml, and can be compressed.  Just pass 
 # the marshaller you want to use as the second argument to AutomaticSnapshotMadeleine.new.  
 # If the passed marshaller did not successfully deserialize the latest snapshot, the system 
-# will try to automatically detect and read either Marshal, YAML, or compressed Marshal or YAML.
+# will try to automatically detect and read either Marshal, YAML, SOAP, or compressed Marshal or YAML.
 #
 # This module is designed to work correctly in the case there are multiple madeleine systems in use by
 # a single program, and is also safe to use with threads.
@@ -342,7 +342,7 @@ module Madeleine
             break if (s !~ /^\s*$/) # ignore blank lines
           end
           io.rewind
-          if (s && s =~ /^\s*<\?xml/) # "<?xml" begins an xml serialization
+          if (s && s =~ /^\s*<\?[xX][mM][lL]/) # "<?xml" begins an xml serialization
             SOAP::Marshal
           else
             while (s = io.gets)
