@@ -9,6 +9,7 @@ end
 require 'madeleine'
 require 'test/unit'
 require 'stringio'
+require 'sillymock'
 
 class ExampleCommand
   attr :value
@@ -72,39 +73,23 @@ class CommandLogTest < Test::Unit::TestCase
   end
 
   def test_writing_command
-    file_service = Object.new
-    def file_service.exist?(path)
-      [
-        ["some", "path"].join(File::SEPARATOR),
-      ].include?(path)
-    end
-    def file_service.dir_entries(path, &block)
-      if path != ["some", "path"].join(File::SEPARATOR)
-        raise "wrong path"
-      end
-      []
-    end
-    def file_service.open(path, flags)
-      @file = MockFile.new
-      @file
-    end
-    def file_service.file
-      @file
-    end
-    def file_service.verify
-      unless @file.was_fsynced
-        raise "file wasn't fsynced"
-      end
-    end
+    mock_file = MockFile.new
+    file_service = Mock.new
+    file_service.expects(:exist?, ["some/path"]).return_value(true)
+    file_service.expects(:dir_entries, ["some/path"]).return_value([])
+    file_service.expects(:open).return_value(mock_file)
+   
     command = ExampleCommand.new(1234)
 
     target = Madeleine::CommandLog.new("some/path", file_service)
     target.store(command)
 
-    file_service.verify
+    assert(mock_file.was_fsynced)
 
-    file_service.file.rewind
-    assert_equal(Marshal.dump(command), file_service.file.read)
+    mock_file.rewind
+    assert_equal(Marshal.dump(command), mock_file.read)
+
+    file_service.verify
   end
 end
 
