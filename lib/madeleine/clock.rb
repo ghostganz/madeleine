@@ -21,7 +21,6 @@ module Madeleine
     module ClockedSystem
 
       def time
-        verify_clock_initialized
         clock.time
       end
 
@@ -34,12 +33,6 @@ module Madeleine
           @clock = Clock.new
         end
         @clock
-      end
-
-      def verify_clock_initialized
-        unless defined? @clock
-          raise "Trying to get time before clock initialized"
-        end
       end
     end
 

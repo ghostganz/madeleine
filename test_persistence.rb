@@ -362,19 +362,6 @@ class CommandVerificationTest < Test::Unit::TestCase
 end
 
 
-class ClockedSystemTest < Test::Unit::TestCase
-  
-  def test_taking_time_on_uninitialized_system
-    target = Object.new
-    target.extend(Madeleine::Clock::ClockedSystem)
-    assert_raises(RuntimeError) {
-      target.time
-    }
-  end
-
-end
-
-
 class CustomMarshallerTest < Test::Unit::TestCase
 
   def teardown
@@ -427,7 +414,6 @@ suite << ClockedPersistenceTest.suite
 suite << TimeTest.suite
 suite << TimeOptimizingCommandLogTest.suite
 suite << CommandVerificationTest.suite
-suite << ClockedSystemTest.suite
 suite << CustomMarshallerTest.suite
 
 require 'test/unit/ui/console/testrunner'
