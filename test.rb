@@ -95,6 +95,11 @@ end
 
 
 class LoggerTest < Test::Unit::TestCase
+  include TestUtils
+
+  def teardown
+    delete_directory("whoah")
+  end
 
   def test_creation
     @log = Object.new
@@ -230,6 +235,7 @@ end
 
 
 class TimeOptimizingLoggerTest < Test::Unit::TestCase
+  include TestUtils
 
   def setup
     @target = Madeleine::Logger.new("some_directory", self)
@@ -237,6 +243,10 @@ class TimeOptimizingLoggerTest < Test::Unit::TestCase
     def @log.store(command)
       self << command
     end
+  end
+
+  def teardown
+    delete_directory("some_directory")
   end
 
   def test_optimizing_ticks
