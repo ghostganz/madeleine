@@ -1,7 +1,16 @@
 #
 # Madeleine - Ruby Object Prevalence
 #
-# Copyright(c) Anders Bengtsson 2003
+# Author::    Anders Bengtsson <ndrsbngtssn@yahoo.se>
+# Copyright:: Copyright(c) 2003
+#
+# Usage:
+#
+# madeleine = SnapshotMadeleine.new("my_example_storage") {
+#   SomeExampleApplication.new()
+# }
+#
+# madeleine.execute_command(command)
 #
 
 require 'thread'
@@ -9,11 +18,28 @@ require 'sync'
 
 module Madeleine
 
-  MADELEINE_VERSION = "0.3"
+  MADELEINE_VERSION = "0.4"
 
   class SnapshotMadeleine
+
+    # The prevalent system
     attr_reader :system
 
+    # Creates a new Madeleine instance. If there is a snapshot available
+    # then the system will be created from that, otherwise
+    # <code>new_system</code> will be used. The state of the system will
+    # then be restored from the command logs.
+    #
+    # You can provide your own snapshot marshaller, for instance using
+    # YAML or SOAP, instead of Ruby's built-in marshaller. The
+    # <code>snapshot_marshaller</code> must respond to
+    # <code>load(stream)</code> and <code>dump(object, stream)</code>. You
+    # must always use the same marshaller for a system (unless you convert
+    # your snapshot files).
+    #
+    # <li><code>new_system</code> - New system to use if no stored system was found.
+    # <li><code>directory_name</code> - Storage directory to use. Will be created if needed.
+    # <li><code>snapshot_marshaller</code> - Marshaller to use for system snapshots. (Optional)
     def initialize(directory_name, marshaller=Marshal, &new_system_block)
       @directory_name = directory_name
       @marshaller = marshaller
@@ -25,6 +51,15 @@ module Madeleine
       @logger = create_logger(directory_name, log_factory)
     end
 
+    # Execute a command with the prevalent system.
+    #
+    # Commands must have a method <code>execute(aSystem)</code>.
+    # Otherwise an error, <code>Madeleine::InvalidCommandException</code>,
+    # will be raised.
+    #
+    # The return value from the command's <code>execute</code> method is returned.
+    #
+    # <li><code>aCommand</code> - The command to execute on the system.
     def execute_command(command)
       verify_command_sane(command)
       @lock.synchronize {
@@ -34,6 +69,21 @@ module Madeleine
       }
     end
 
+    # Take a snapshot of the current system.
+    #
+    # You need to regularly take a snapshot of a running system,
+    # otherwise the logs will grow big and restarting the system will take a
+    # long time. Your backups must also be done from the snapshot files,
+    # since you can't make a consistent backup of a live log.
+    #
+    # A practical way of doing snapshots is a timer thread:
+    #
+    #  Thread.new(madeleine) {|madeleine|
+    #    while true
+    #      sleep(60 * 60 * 24) # 24 hours
+    #      madeleine.take_snapshot
+    #    end
+    #  }
     def take_snapshot
       @lock.synchronize {
         @logger.close
@@ -42,6 +92,10 @@ module Madeleine
       }
     end
 
+    # Close the system.
+    #
+    # The log file is closed and no new commands can be received
+    # by this Madeleine.
     def close
       @lock.synchronize {
         @logger.close
