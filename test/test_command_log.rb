@@ -24,39 +24,16 @@ end
 
 class CommandLogTest < Test::Unit::TestCase
 
-  def setup
-    @target = Madeleine::CommandLog.new(".", FileService.new)
+  class MockFile < StringIO
+    def fsync
+      @was_fsynced = true
+      super
+    end
+
+    attr :was_fsynced
   end
 
-  def teardown
-    @target.close
-    File.delete(expected_file_name)
-  end
-
-  def test_logging
-    f = open(expected_file_name, 'r')
-    assert(f.stat.file?)
-    @target.store(ExampleCommand.new(7))
-    read_command = Marshal.load(f)
-    assert_equal(ExampleCommand, read_command.class)
-    assert_equal(7, read_command.value)
-    assert_equal(f.stat.size, f.tell)
-    @target.store(ExampleCommand.new(3))
-    read_command = Marshal.load(f)
-    assert_equal(3, read_command.value)
-    assert_equal(f.stat.size, f.tell)
-    f.close
-  end
-
-  def expected_file_name
-    "000000000000000000001.command_log"
-  end
-end
-
-
-class CommandLogTestUsingMocks < Test::Unit::TestCase
-
-  def test_logging
+  def test_file_opening
     file_service = Object.new
     def file_service.exist?(path)
       [
@@ -77,29 +54,57 @@ class CommandLogTestUsingMocks < Test::Unit::TestCase
       ]
     end
     def file_service.open(path, flags)
+      @was_open_called = true
       if path != ["some", "path", "000000000000000000004.command_log"].join(File::SEPARATOR)
         raise "wrong file id"
       end
       if flags != "wb"
         raise "wrong flags"
       end
-      @file = StringIO.new
+      MockFile.new
+    end
+    def file_service.was_open_called
+      @was_open_called
+    end
+
+    target = Madeleine::CommandLog.new("some/path", file_service)
+    assert(file_service.was_open_called)
+  end
+
+  def test_writing_command
+    file_service = Object.new
+    def file_service.exist?(path)
+      [
+        ["some", "path"].join(File::SEPARATOR),
+      ].include?(path)
+    end
+    def file_service.dir_entries(path, &block)
+      if path != ["some", "path"].join(File::SEPARATOR)
+        raise "wrong path"
+      end
+      []
+    end
+    def file_service.open(path, flags)
+      @file = MockFile.new
       @file
     end
     def file_service.file
       @file
     end
-
-    target = Madeleine::CommandLog.new("some/path", file_service)
-
+    def file_service.verify
+      unless @file.was_fsynced
+        raise "file wasn't fsynced"
+      end
+    end
     command = ExampleCommand.new(1234)
 
+    target = Madeleine::CommandLog.new("some/path", file_service)
     target.store(command)
+
+    file_service.verify
 
     file_service.file.rewind
     assert_equal(Marshal.dump(command), file_service.file.read)
-
-    # assert file was flushed
   end
 end
 
