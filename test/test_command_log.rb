@@ -25,15 +25,6 @@ end
 
 class CommandLogTest < Test::Unit::TestCase
 
-  class MockFile < StringIO
-    def fsync
-      @was_fsynced = true
-      super
-    end
-
-    attr :was_fsynced
-  end
-
   def test_file_opening
     file_service = Object.new
     def file_service.exist?(path)
@@ -62,7 +53,7 @@ class CommandLogTest < Test::Unit::TestCase
       if flags != "wb"
         raise "wrong flags"
       end
-      MockFile.new
+      StringIO.new
     end
     def file_service.was_open_called
       @was_open_called
@@ -91,3 +82,4 @@ class CommandLogTest < Test::Unit::TestCase
     file_service.verify
   end
 end
+

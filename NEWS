@@ -1,5 +1,11 @@
 
+    * Now creates full path to storage files, not just the last
+      directory (reported by Wayne Vucenic)
+
+Madeleine 0.7.1 (August 22, 2004):
+
     * ZMarshal changed to work around Zlib bug.
+    * automatic_read_only fixed when intercepted class is inherited from
 
 Madeleine 0.7 (July 23, 2004):
 
