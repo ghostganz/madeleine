@@ -1,6 +1,4 @@
-require 'yaml'
-require 'madeleine/zmarshal'
-require 'soap/marshal'
+require 'madeleine/deserialize'
 require 'madeleine/upgrade_snapshot'
 
 module Madeleine
@@ -61,14 +59,14 @@ module Madeleine
 #
 # This module should be included (at the top) in any classes that are to be persisted.
 # It will intercept method calls and make sure they are converted into commands that are logged by Madeleine.
-# It does this by returning a Prox object that is a proxy for the real object.
+# It does this by returning an Automatic_proxy object that is a proxy for the real object.
 #
 # It also handles automatic_read_only and automatic_read_write, allowing user specification of which methods
 # should be made into commands
 #
     module Interceptor
 #
-# When included, redefine new so that we can return a Prox object instead, and define methods to handle
+# When included, redefine new so that we can return a proxy object instead, and define methods to handle
 # keeping track of which methods are read only
 #
       def self.included(klass)
@@ -118,7 +116,7 @@ module Madeleine
         self.class.instance_eval {@read_only_methods}
       end
 #
-# Cannot pass self to other objects, need to pass the proxy.  Users can use proxy to get a new proxy.
+# You cannot pass self to other objects, need to pass a proxy.  You can use this method to get one.
 #
       def proxy
         Automatic_proxy.new(self)
@@ -200,7 +198,7 @@ module Madeleine
         end
       end
 #
-# We need to override == so that users can compare their own objects.  There may be more than one
+# == is overridden so that you can compare your own objects.  This is because there may be more than one
 # Automatic_proxy object that refers to the same client object.
 #
       def ==(other)
@@ -212,6 +210,9 @@ module Madeleine
       end
     end
 
+#
+# Automatic_objects takes care of all the items that need to be marshalled at snapshot time
+#
     class Automatic_objects #:nodoc:
       attr_accessor :root_proxy
       attr_reader :sysid, :client_objects
@@ -231,6 +232,17 @@ module Madeleine
 # The AutomaticSnapshotMadeleine class contains an instance of the persister
 # (default is SnapshotMadeleine) and provides additional automatic functionality.
 #
+# The class is instantiated the same way as SnapshotMadeleine:
+# madeleine_sys = AutomaticSnapshotMadeleine.new("storage_directory") { A.new(param1, ...) }
+# The second initialisation parameter is the persister.  Supported persisters are:
+#
+# * Marshal  (default)
+# * YAML
+# * SOAP::Marshal
+# * Madeleine::ZMarshal.new(Marshal)
+# * Madeleine::ZMarshal.new(YAML)
+# * Madeleine::ZMarshal.new(SOAP::Marshal)
+#
 # The class keeps a record of all the systems that currently exist.
 # Each instance of the class keeps a record of Automatic_proxy objects in that system.
 #
@@ -242,23 +254,21 @@ module Madeleine
 
       def initialize(directory_name, marshaller=Marshal, persister=SnapshotMadeleine, &new_system_block)
         @automatic_objects = Automatic_objects.new
-        Thread.current[:system] = self # during system startup system should not create commands
         @marshaller = marshaller
-        add_system
         begin
+          Thread.current[:system] = self # during system startup system should not create commands
+          add_system
           @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
           @automatic_objects.root_proxy = @persister.system
-        rescue ArgumentError => e
-          if (!@upgraded)
-            p "Upgrading system..."
+        rescue ArgumentError  # attempt to upgrade
+          if (!@upgraded && CommandLog.log_file_names(directory_name, FileService.new).size == 0)
             upgradesys = AutomaticSnapshotMadeleine_upgrader.new(directory_name, marshaller, persister, &new_system_block)
             upgradesys.take_snapshot
             upgradesys.close
-            p "Upgraded."
             @upgraded = true
             retry
           else
-            raise e
+            raise
           end
         ensure
           Thread.current[:system] = false
@@ -295,76 +305,6 @@ module Madeleine
 #
       def method_missing(symbol, *args, &block)  #:nodoc:
         @persister.send(symbol, *args, &block)
-      end
-    end
-
-
-    module Deserialize #:nodoc:
-#
-# Detect format of an io stream. Leave it rewound.
-#
-      def Deserialize.detect(io)
-        c = io.getc
-        c1 = io.getc
-        io.rewind
-        if (c == Marshal::MAJOR_VERSION && c1 <= Marshal::MINOR_VERSION)
-          Marshal
-        elsif (c == 31 && c1 == 139) # gzip magic numbers
-          ZMarshal
-        else
-          while (s = io.gets)
-            break if (s !~ /^\s*$/) # ignore blank lines
-          end
-          io.rewind
-          if (s && s =~ /^\s*<\?[xX][mM][lL]/) # "<?xml" begins an xml serialization
-            SOAP::Marshal
-          else
-            while (s = io.gets)
-              break if (s !~ /^\s*#/ && s !~ /^\s*$/) # ignore blank and comment lines
-            end
-            io.rewind
-            if (s && s =~ /^\s*---/) # "---" is the yaml header
-              YAML
-            else
-              nil # failed to detect
-            end
-          end
-        end
-      end
-#
-# Try to deserialize object.  If there was an error, try to detect marshal format, 
-# and return deserialized object using the right marshaller
-# If detection didn't work, raise up the exception
-#
-      def Deserialize.load(io, marshaller=Marshal)
-        begin
-          marshaller.load(io)
-        rescue Exception => e
-          io.rewind
-          detected_marshaller = detect(io)
-          if (detected_marshaller == ZMarshal)
-            zio = Zlib::GzipReader.new(io)
-            detected_zmarshaller = detect(zio)
-            zio.finish
-            io.rewind
-            if (detected_zmarshaller)
-              if (detected_zmarshaller == SOAP::Marshal)
-                zio = Zlib::GzipReader.new(io)
-                xml = zio.read
-                zio.finish
-                SOAP::Marshal.load(xml)
-              else
-                ZMarshal.new(detected_zmarshaller).load(io)
-              end
-            else
-              raise e
-            end
-          elsif (detected_marshaller)
-            detected_marshaller.load(io)
-          else
-            raise e
-          end
-        end
       end
     end
 
