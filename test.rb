@@ -287,6 +287,31 @@ class TimeOptimizingLoggerTest < Test::Unit::TestCase
 end
 
 
+class SharedLockQueryTest < Test::Unit::TestCase
+
+  def prevalence_base
+    "shared_lock_test"
+  end
+
+  def test_query
+    madeleine = SnapshotMadeleine.new(prevalence_base) { "hello" }
+    $shared = false
+    $was_shared = false
+    def madeleine.synchronize_shared(&block)
+      $shared = true
+      block.call
+      $shared = false
+    end
+    query = Object.new
+    def query.execute(system)
+      $was_shared = $shared
+    end
+    madeleine.execute_query(query)
+    assert($was_shared)
+  end
+end
+
+
 suite = Test::Unit::TestSuite.new("Madeleine")
 
 suite << SnapshotMadeleineTest.suite
@@ -298,6 +323,7 @@ suite << CustomMarshallerTest.suite
 suite << ErrorHandlingTest.suite
 suite << QueryTest.suite
 suite << TimeOptimizingLoggerTest.suite
+suite << SharedLockQueryTest.suite
 
 require 'test_clocked'
 add_clocked_tests(suite)

@@ -76,9 +76,6 @@ module Madeleine
       end
 
       def forward_to(newTime)
-        if newTime < @time
-          raise "Can't decrease clock's time."
-        end
         @time = newTime
       end
     end

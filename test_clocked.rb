@@ -33,9 +33,6 @@ class TimeTest < Test::Unit::TestCase
     assert_nothing_raised() {
       target.forward_to(t2)
     }
-    assert_raises(RuntimeError) {
-      target.forward_to(t1)
-    }
   end
 
   def test_time_actor

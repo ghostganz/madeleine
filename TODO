@@ -1,4 +1,6 @@
 
+* Ability to supply mock logger (to unit test without I/O)
+* Read-write locks
 * ClockCommand
 * Integrate batched-writes in SnapshotMadeleine
 * More sample code

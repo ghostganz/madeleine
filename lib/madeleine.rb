@@ -76,7 +76,7 @@ module Madeleine
     #
     # * <tt>query</tt> - The query command to execute
     def execute_query(query)
-      synchronize {
+      synchronize_shared {
         execute_without_storing(query)
       }
     end
@@ -119,6 +119,10 @@ module Madeleine
 
     def synchronize(&block)
       @lock.synchronize(&block)
+    end
+
+    def synchronize_shared(&block)
+      @lock.synchronize(:SH, &block)
     end
 
     def create_lock

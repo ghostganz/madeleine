@@ -1,4 +1,7 @@
 
+    * No longer requires the system clock to always increase
+    * Shared locks for queries
+
 Madeleine 0.4 (July 4, 2003):
 
     * Deprecated ClockedSnapshotMadeleine
