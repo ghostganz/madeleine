@@ -404,6 +404,18 @@ class ThreadedStartupTest < AutoTest
   end
 end
 
+# tests restoring when objects get unreferenced and GC'd during restore
+class FinalisedTest < AutoTest
+  def test_main
+    mad = create_new_system(B, prevalence_base, 0)
+    mad.system.y = Array.new(200000)  # make ruby run GC
+    mad.system.y = Array.new(200000)  # must be a better way, but running GC.start from inside
+    mad.system.y = Array.new(50000)   # class B didn't work for me
+    mad.close
+    mad2 = make_system(prevalence_base) { B.new(0) }
+    mad2.close
+  end
+end
 
 def add_automatic_tests(suite)
   suite << BasicTest.suite
@@ -415,6 +427,7 @@ def add_automatic_tests(suite)
   suite << CircularReferenceTest.suite
   suite << AutomaticCustomMarshallerTest.suite
   suite << BasicThreadSafetyTest.suite
+  suite << FinalisedTest.suite
 end
 
 def add_slow_automatic_tests(suite)
