@@ -6,6 +6,8 @@ require 'thread'
 
 module Madeleine
 
+  MADELEINE_VERSION = "0.0"
+
   class SnapshotPrevayler
     attr_reader :system
 
@@ -218,3 +220,5 @@ module Madeleine
   end
 
 end
+
+require 'madeleine/clock'

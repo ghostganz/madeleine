@@ -2,12 +2,13 @@
 #
 # Copyright(c) 2003 Anders Bengtsson
 #
-# Based on the unit tests from Prevayler,
+# PersistenceTest is based on the unit tests from Prevayler,
 # Copyright(c) 2001-2003 Klaus Wuestefeld.
 #
 
+$LOAD_PATH.unshift("lib")
+
 require 'madeleine'
-require 'clock'
 require 'test/unit'
 
 class AddingSystem

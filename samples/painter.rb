@@ -10,7 +10,9 @@
 # would you?)
 #
 
-require '../madeleine.rb'
+$LOAD_PATH.unshift(".." + File::SEPARATOR + "lib")
+
+require 'madeleine'
 
 require 'tkclass'
 
