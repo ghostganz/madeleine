@@ -52,7 +52,7 @@ end
 
 class G
   include Madeleine::Automatic::Interceptor
-  attr_accessor :y
+  attr_accessor :y,:a
   def initialize
     @y = H.new
   end
@@ -131,7 +131,7 @@ class BasicTest < AutoTest
     assert_equal(1, mad_a0.system.k, "No commands or snapshot")
     mad_a0.system.z = 0
     mad_a0.system.z += 1
-    assert_equal(1, mad_a0.system.z)
+    assert_equal(1, mad_a0.system.z, "Object changes")
     mad_a0.system.z -= 10
     assert_equal(-9, mad_a0.system.z, "Object changes")
     mad_a0.close
@@ -164,6 +164,8 @@ class ObjectOutsideTest < AutoTest
   end
 end
 
+# Passing a block when it would generate a command is not allowed because blocks cannot
+# be serialised.  However, block passing/yielding inside the application is ok.
 class BlockGivenTest < AutoTest
   def test_main
     mad = create_new_system(J, prevalence_base)
@@ -171,7 +173,7 @@ class BlockGivenTest < AutoTest
                    mad.system.yielder {|a| a}
                  }
     mad2 = create_new_system(I, prevalence_base+"2")
-    assert(mad2.system.testyield)
+    assert(mad2.system.testyield, "Internal block passing")
   end
 end
 
@@ -179,25 +181,25 @@ class NonPersistedObjectTest < AutoTest
   def test_main
     mad_b = create_new_system(B, prevalence_base, 0)
     mad_b.system.y.x -= 1
-    assert_equal(-1, mad_b.system.y.x, "mad_b.y.x")
+    assert_equal(-1, mad_b.system.y.x, "Direct change of object inside main object")
 
     mad_b.system.y.a.w ||= "hello"  # not saved
     mad_b.system.y.a.w += " again"  # not saved
 
-    assert_equal("hello again", mad_b.system.y.a.w, "mad_b.y.a.w")
+    assert_equal("hello again", mad_b.system.y.a.w, "Non persisted object before close")
 
     mad_b.close
     mad_b2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
-    assert_equal(nil, mad_b2.system.y.a.w, "mad_b2.y.a.w")
+    assert_equal(nil, mad_b2.system.y.a.w, "Non persisted object after restart, no snapshot")
     mad_b2.system.y.a.w ||= "hello"  # not saved
     mad_b2.system.y.a.w += " again"  # not saved
     mad_b2.take_snapshot             # NOW saved
     mad_b2.system.y.a.w += " again"  # not saved
-    assert_equal("hello again again", mad_b2.system.y.a.w, "mad_b2.y.a.w")
+    assert_equal("hello again again", mad_b2.system.y.a.w, "Non persisted object after take_snapshot and 1 change")
 
     mad_b2.close
     mad_b3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
-    assert_equal("hello again", mad_b3.system.y.a.w, "mad_b3.y.a.w")
+    assert_equal("hello again", mad_b3.system.y.a.w, "Non persisted object after restore (back to snapshotted state)")
   end
 end
 
@@ -209,20 +211,28 @@ class RefInExternalObjTest < AutoTest
     mad_c.system.s = x  # pass in an external object that contains a ref to obj in ths system
 
     mad_c.system.s.w.x += 1      # Increment counter via external obj
-    assert_equal(1, mad_c.system.y.x, "mad_c.y.x")
+    assert_equal(1, mad_c.system.y.x, "Change via external object")
     mad_c.system.y.x += 1        # Increment counter directly
-    assert_equal(2, mad_c.system.s.w.x, "mad_c.s.w.x")
-
+    assert_equal(2, mad_c.system.s.w.x, "Direct change")
     mad_c.close
-    mad_c2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
-    assert_equal(2, mad_c2.system.s.w.x, "mad_c2.s.w.x")
-    assert_equal(2, mad_c2.system.y.x, "mad_c2.y.x")
-    mad_c2.take_snapshot
 
+    mad_c2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
+    assert_equal(2, mad_c2.system.s.w.x, "Value via external object after commands/restore")
+    assert_equal(2, mad_c2.system.y.x, "Direct value after restore")
+    mad_c2.take_snapshot
     mad_c2.close
+
     mad_c3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
-    assert_equal(2, mad_c3.system.s.w.x, "mad_c3.s.w.x")
-    assert_equal(2, mad_c3.system.y.x, "mad_c3.y.x")
+    assert_equal(2, mad_c3.system.s.w.x, "Value via external object after snapshot/restore")
+    assert_equal(2, mad_c3.system.y.x, "Direct value after snapshot/restore")
+
+    mad_c3.system.s.w.x += 1      # Increment counter via external obj
+    mad_c3.system.y.x += 1        # Increment counter directly
+    mad_c3.close
+
+    mad_c4 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
+    assert_equal(4, mad_c4.system.s.w.x, "Value via external object after snapshot+commands/restore")
+    assert_equal(4, mad_c4.system.y.x, "Direct value after snapshot+commands/restore")
   end
 end
 
@@ -280,7 +290,7 @@ class InvalidMethodTest < AutoTest
     assert_raises(NoMethodError) {
                    mad_f.system.not_a_method
                  }
-    assert_equal(-1, mad_f.system.z, "mad_f.z")
+    assert_equal(-1, mad_f.system.z, "System functions after NoMethodError")
   end
 end
 
@@ -290,11 +300,16 @@ class CircularReferenceTest < AutoTest
     mad_g.system.y.w = mad_g.system
     mad_g.close
     mad_g2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { G.new }
-    assert(mad_g2.system == mad_g2.system.y.w.y.w.y.w, "mad_g2.system")
+    assert(mad_g2.system == mad_g2.system.y.w.y.w.y.w, "Circular reference after command/restore")
     mad_g2.take_snapshot
     mad_g2.close
     mad_g3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { G.new }
-    assert(mad_g3.system == mad_g3.system.y.w.y.w.y.w, "mad_g3.system")
+    assert(mad_g3.system == mad_g3.system.y.w.y.w.y.w, "Circular reference after snapshot/restore")
+    mad_g3.system.y.w.y.w.y.w.a = 1
+    assert_equal(1, mad_g3.system.a, "Circular reference change")
+    mad_g3.close
+    mad_g4 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { G.new }
+    assert_equal(1, mad_g4.system.y.w.y.w.y.w.a, "Circular reference after snapshot+commands/restore")
   end
 end
 
@@ -330,7 +345,7 @@ class AutomaticCustomMarshalllerTest < AutoTest
     mad_h.system.z += "d"
     mad_h.close
     mad_h2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(dir, self) { A.new }
-    assert_equal(mad_h2.system.z, "abcd", "mad_h.z")
+    assert_equal("abcd", mad_h2.system.z, "Custom marshalling after snapshot+commands/restore")
   end
 end
 
@@ -346,14 +361,14 @@ class ThreadedStartupTest < AutoTest
                n.times {
                  mad[n].system.plus1
                }
-               assert_equal(mad[n].system.z, n, "mad[#{n}].z")
+               assert_equal(n, mad[n].system.z, "mad[#{n}].z")
                mad[n].take_snapshot if (n%2 == 0)
              }
     }
     20.times {|n|
       x[n].join
       mad_i = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base+n.to_s) { F.new }
-      assert_equal(mad_i.system.z, n, "mad[#{n}].z")
+      assert_equal(n, mad_i.system.z, "mad[#{n}].z")
     }
   end
 end
