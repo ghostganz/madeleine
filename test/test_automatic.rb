@@ -34,6 +34,9 @@ class C
     @x = x
     @a ||= D.new
   end
+  def myself
+    self
+  end
 end
 
 # direct changes in this class are not saved, except at snapshot
@@ -102,6 +105,23 @@ class K
     @k=21
   end
 end  
+
+class L
+  include Madeleine::Automatic::Interceptor
+  attr_reader :x
+  attr_accessor :z
+  def initialize
+    @x = M.new(proxy)
+  end
+end
+
+class M
+  include Madeleine::Automatic::Interceptor
+  attr_reader :yy
+  def initialize(yy)
+    @yy = yy
+  end
+end
 
 class AutoTest < Test::Unit::TestCase
 
@@ -361,6 +381,20 @@ class CircularReferenceTest < AutoTest
     mad_g4 = make_system(prevalence_base) { G.new }
     assert_equal(1, mad_g4.system.yy.w.yy.w.yy.w.a, "Circular reference after snapshot+commands/restore")
     mad_g4.close
+# The following tests passing self (from class L to class M during init) using self.proxy (or just proxy)
+# to pass the proxy, and not the proxied object
+    mad_l = create_new_system(L, prevalence_base)
+    assert_equal(mad_l.system, mad_l.system.x.yy, "Circular ref before snapshot/restore, self passed")
+    mad_l.take_snapshot
+    mad_l.close
+    mad_l = make_system(prevalence_base) { L.new }
+    assert_equal(mad_l.system, mad_l.system.x.yy, "Circular ref after snapshot/restore, self passed")
+    mad_l.system.x.yy.z = "Test"
+    assert_equal("Test", mad_l.system.x.yy.z, "Circular ref after command through self passed")
+    mad_l.close
+    mad_l = make_system(prevalence_base) { L.new }
+    assert_equal("Test", mad_l.system.x.yy.z, "Circular ref after command through self passed after command/restore")
+    mad_l.close
   end
 end
 
@@ -466,13 +500,19 @@ class ThreadedStartupTest < AutoTest
   end
 end
 
-# tests restoring when objects get unreferenced and GC'd during restore
+require 'weakref'
 class FinalisedTest < AutoTest
   def test_main
-    mad = create_new_system(B, prevalence_base, 0)
-    mad.system.yy = Array.new(200000)  # make ruby run GC
+    mad = create_new_system(B, prevalence_base, 7)
+    weak_prox = WeakRef.new(mad.system.yy)
+    weak_client = WeakRef.new(mad.system.yy.myself)
+    mad.system.yy = Array.new(200000)  # make GC happen during restore of commands
     mad.system.yy = Array.new(200000)  # must be a better way, but running GC.start from inside
     mad.system.yy = Array.new(50000)   # class B didn't work for me
+    GC.start
+    assert_raises(WeakRef::RefError) {weak_prox.x} # check automatic_proxy object is GC'd
+    GC.start
+    assert_raises(WeakRef::RefError) {weak_client.x} # check automatic client object is GC'd
     mad.close
     mad2 = make_system(prevalence_base) { B.new(0) }
     mad2.close
