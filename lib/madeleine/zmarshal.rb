@@ -14,8 +14,8 @@ module Madeleine
   #
   # Uses <tt>zlib</tt> to do on-the-fly compression/decompression.
   #
-  # (Tested with Marshal and YAML, but any Madeleine-compatible marshaller
-  # should work).
+  # ZMarshal works with Ruby's own Marshal and YAML, but not with SOAP
+  # marshalling.
   #
   # Usage:
   #
