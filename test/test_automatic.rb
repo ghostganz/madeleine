@@ -350,11 +350,11 @@ class CircularReferenceTest < AutoTest
     mad_g.system.yy.w = mad_g.system
     mad_g.close
     mad_g2 = make_system(prevalence_base) { G.new }
-    assert(mad_g2.system == mad_g2.system.yy.w.yy.w.yy.w, "Circular reference after command/restore")
+    assert(mad_g2.system.yy == mad_g2.system.yy.w.yy.w.yy.w.yy, "Circular reference after command/restore")
     mad_g2.take_snapshot
     mad_g2.close
     mad_g3 = make_system(prevalence_base) { G.new }
-    assert(mad_g3.system == mad_g3.system.yy.w.yy.w.yy.w, "Circular reference after snapshot/restore")
+    assert(mad_g3.system.yy == mad_g3.system.yy.w.yy.w.yy.w.yy, "Circular reference after snapshot/restore")
     mad_g3.system.yy.w.yy.w.yy.w.a = 1
     assert_equal(1, mad_g3.system.a, "Circular reference change")
     mad_g3.close
@@ -392,7 +392,7 @@ class AutomaticCustomMarshallerTest < AutoTest
     mad_h.close
     if (marshaller == YAML)
       File.open(dir + "/000000000000000000002.snapshot", "r") {|f|
-        assert_equal(f.gets, "--- !ruby/object:Madeleine::Automatic::Prox \n", "Custom marshalling marshaller change check")
+        assert_equal(f.gets, "--- !ruby/object:Madeleine::Automatic::Automatic_objects \n", "Custom marshalling marshaller change check")
       }
     end
     mad_h = make_system(dir) { G.new }
@@ -428,16 +428,16 @@ class AutomaticCustomMarshallerTest < AutoTest
     mad_h.system.yy.w = mad_h.system
     mad_h.close
     mad_h2 = make_system(dir, marshaller) { G.new }
-    assert_equal(mad_h2.system, mad_h2.system.yy.w, "Custom marshalling after commands/restore, circular ref")
+    assert_equal(mad_h2.system.yy, mad_h2.system.yy.w.yy, "Custom marshalling after commands/restore, circular ref")
     mad_h2.take_snapshot
     mad_h2.close
     mad_h3 = make_system(dir, marshaller) { G.new }
-    assert_equal(mad_h3.system, mad_h3.system.yy.w, "Custom marshalling after snapshot/restore, circular ref")
+    assert_equal(mad_h3.system.yy, mad_h3.system.yy.w.yy, "Custom marshalling after snapshot/restore, circular ref")
     mad_h3.system.yy.w = "sss"
     mad_h3.system.yy.w = mad_h3.system
     mad_h3.close
     mad_h4 = make_system(dir, marshaller) { G.new }
-    assert_equal(mad_h4.system, mad_h4.system.yy.w, "Custom marshalling after snapshot+commands/restore, circular ref")
+    assert_equal(mad_h4.system.yy, mad_h4.system.yy.w.yy, "Custom marshalling after snapshot+commands/restore, circular ref")
     mad_h4.close
   end
 end

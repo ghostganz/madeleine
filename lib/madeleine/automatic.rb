@@ -76,7 +76,7 @@ module Madeleine
           @@read_only_methods = []
 
           def new(*args, &block)
-            Prox.new(_old_new(*args, &block))
+            Proxy_stub.new(_old_new(*args, &block))
           end
 #
 # Called when a method added - remember symbol if read only 
@@ -120,47 +120,42 @@ module Madeleine
 # These objects are recorded in the log by Madeleine.
 # 
     class Command
-      def initialize(symbol, myid, *args)
+      def initialize(symbol, target, *args)
         @symbol = symbol
-        @myid = myid
+        @target = target
         @args = args
       end
 #
 # Called by madeleine when the command is done either first time, or when restoring the log
 #
       def execute(system)
-        Thread.current[:system].myid2ref(@myid).thing.send(@symbol, *@args)
+        @target.send(@symbol, *@args)
       end
     end
 #
 # This is a little class to pass to SnapshotMadeleine.  This is used for snapshots only. 
 # It acts as the marshaller, and just passes marshalling requests on to the user specified
 # marshaller.  This defaults to Marshal, but could be YAML or another.
-# After we have done a restore, the ObjectSpace is searched for instances of Prox to
-# add new objects to the list in AutomaticSnapshotMadeleine
 #
     class Automatic_marshaller #:nodoc:
       def Automatic_marshaller.load(io)
-        restored_obj = Deserialize.load(io, Thread.current[:system].marshaller)
-        ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (o.sysid == restored_obj.sysid)}
-        restored_obj
+        Thread.current[:system].automatic_objects = Deserialize.load(io, Thread.current[:system].marshaller)
+        Thread.current[:system].add_system
+        Thread.current[:system].automatic_objects.root_stub
       end
       def Automatic_marshaller.dump(obj, io = nil)
-        Thread.current[:system].marshaller.dump(obj, io)
+        Thread.current[:system].marshaller.dump(Thread.current[:system].automatic_objects, io)
       end
     end
 #
 # A Prox object is generated and returned by Interceptor each time a system object is created.
 #
-    class Prox #:nodoc:
-      attr_accessor :thing, :myid, :sysid
-      
-      def initialize(thing)
-        if (thing)
+    class Proxy_stub #:nodoc:
+      def initialize(client_object)
+        if (client_object)
           raise "App object created outside of app" unless Thread.current[:system]
-          @sysid = Thread.current[:system].sysid
-          @myid = Thread.current[:system].add(self)
-          @thing = thing
+          @sysid = Thread.current[:system].automatic_objects.sysid
+          @myid = Thread.current[:system].automatic_objects.add(client_object)
         end
       end
 #
@@ -168,56 +163,44 @@ module Madeleine
 # outside the system.
 #
       def method_missing(symbol, *args, &block)
-#      print "Sending #{symbol} to #{@thing.to_s}, myid=#{@myid}, sysid=#{@sysid}\n"
-        raise NoMethodError, "Undefined method" unless @thing.respond_to?(symbol)
-        if (Thread.current[:system] || @thing.read_only_methods.include?(symbol))
-          @thing.send(symbol, *args, &block)
+        if (Thread.current[:system])
+          Thread.current[:system].add_system(@sysid)
+          @sysid = Thread.current[:system].automatic_objects.sysid
+        end
+        thing = AutomaticSnapshotMadeleine.systems[@sysid].automatic_objects.client_objects[@myid]
+#      print "Sending #{symbol} to #{thing.to_s}, myid=#{@myid}, sysid=#{@sysid}\n"
+        raise NoMethodError, "Undefined method" unless thing.respond_to?(symbol)
+        if (Thread.current[:system] || thing.read_only_methods.include?(symbol))
+          thing.send(symbol, *args, &block)
         else
           raise "Cannot make command with block" if block_given?
           Thread.current[:system] = AutomaticSnapshotMadeleine.systems[@sysid]
           begin
-            result = Thread.current[:system].execute_command(Command.new(symbol, @myid, *args))
+            result = Thread.current[:system].execute_command(Command.new(symbol, self, *args))
           ensure
             Thread.current[:system] = false
           end
           result
         end
       end
-#
-# Custom marshalling - this adds the internal id (myid) and the system id to a marshal
-# of the object we are the proxy for.
-# We take care to not marshal the same object twice, so circular references will work.
-# We ignore Thread.current[:system].marshaller here - this is only called by Marshal, and
-# marshal is always used for Command objects
-#
-      def _dump(depth)
-        if (Thread.current[:snapshot_memory])
-          if (Thread.current[:snapshot_memory][self])
-            [@myid.to_s, @sysid].pack("A8A30")
-          else
-            Thread.current[:snapshot_memory][self] = true
-            [@myid.to_s, @sysid].pack("A8A30") + Marshal.dump(@thing, depth)
-          end
-        else
-          [@myid.to_s, @sysid].pack("A8A30")  # never marshal a prox object in a command, just ref
-        end
-      end
+    end
 
+    class Automatic_objects #:nodoc:
+      attr_accessor :root_stub
+      attr_reader :sysid, :client_objects
+      def initialize
+        @sysid = Time.now.to_f.to_s + Thread.current.object_id.to_s # Gererate a new sysid
+        @client_objects = []
+      end
 #
-# Custom marshalling for Marshal - restore a Prox object.
+# Add a client object to the list, return the myid for that object
 #
-      def Prox._load(str)
-        x = Prox.new(nil)
-        a = str.unpack("A8A30a*")
-        x.myid = a[0].to_i
-        x.sysid = a[1]
-        x = Thread.current[:system].restore(x)
-        x.thing = Marshal.load(a[2]) if (a[2] > "")
-        x
+      def add(client_object)
+        @client_objects << client_object
+        @client_objects.size - 1
       end
 
     end
-
 #
 # The AutomaticSnapshotMadeleine class contains an instance of the persister
 # (default is SnapshotMadeleine) and provides additional automatic functionality.
@@ -229,59 +212,19 @@ module Madeleine
 # marshalling will work correctly.
 #
     class AutomaticSnapshotMadeleine
-      attr_accessor :marshaller
-      attr_reader :list, :sysid
+      attr_accessor :marshaller, :automatic_objects
 
       def initialize(directory_name, marshaller=Marshal, persister=SnapshotMadeleine, &new_system_block)
-        @sysid ||= Time.now.to_f.to_s + Thread.current.object_id.to_s # Gererate a new sysid
-        @myid_count = 0
-        @list = {}
+        @automatic_objects = Automatic_objects.new
         Thread.current[:system] = self # during system startup system should not create commands
-        Thread.critical = true
-        @@systems ||= {}  # holds systems by sysid
-        @@systems[@sysid] = self
-        Thread.critical = false
         @marshaller = marshaller # until attrb
+        add_system
         begin
           @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
-          @list.delete_if {|k,v|  # set all the prox objects that now exist to have the right sysid
-            begin
-              ObjectSpace._id2ref(v).sysid = @sysid
-              false
-            rescue RangeError
-              true # Id was to a GC'd object, delete it
-            end
-          }
+          @automatic_objects.root_stub = @persister.system
         ensure
           Thread.current[:system] = false
         end
-      end
-#
-# Add a proxy object to the list, return the myid for that object
-#
-      def add(proxo)  
-        @list[@myid_count += 1] = proxo.object_id
-        @myid_count
-      end
-#
-# Restore a marshalled proxy object to list - myid_count is increased as required.
-# If the object already exists in the system then the existing object must be used.
-#
-      def restore(proxo)  
-        if (@list[proxo.myid])
-          proxo = myid2ref(proxo.myid)
-        else
-          @list[proxo.myid] = proxo.object_id
-          @myid_count = proxo.myid if (@myid_count < proxo.myid)
-        end
-        proxo
-      end
-#
-# Returns a reference to the object indicated by the internal id supplied.
-#
-      def myid2ref(myid)
-        raise "Internal id #{myid} not found" unless objid = @list[myid]
-        ObjectSpace._id2ref(objid)
       end
 #
 # Take a snapshot of the system.
@@ -289,10 +232,8 @@ module Madeleine
       def take_snapshot
         begin
           Thread.current[:system] = self
-          Thread.current[:snapshot_memory] = {}
           @persister.take_snapshot
         ensure
-          Thread.current[:snapshot_memory] = nil
           Thread.current[:system] = false
         end
       end
@@ -303,18 +244,14 @@ module Madeleine
         @@systems
       end
 #
-# Close method changes the sysid for Prox objects so they can't be mistaken for real ones in a new 
-# system before GC gets them
+# Add this system to the systems
 #
-      def close
-        begin
-          @list.each_key {|k| myid2ref(k).sysid = nil}
-        rescue RangeError
-          # do nothing
-        end
-        @persister.close
+      def add_system(sysid = automatic_objects.sysid)
+        Thread.critical = true
+        @@systems ||= {}  # holds systems by sysid
+        Thread.critical = false
+        @@systems[sysid] = self
       end
-
 #
 # Pass on any other calls to the persister
 #
