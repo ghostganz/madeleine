@@ -1,17 +1,9 @@
-require 'yaml'
-require 'madeleine/zmarshal'
-require 'soap/marshal'
 
 module Madeleine
 
-
   module Automatic
 #
-# This is a little class to pass to SnapshotMadeleine.  This is used for snapshots only. 
-# It acts as the marshaller, and just passes marshalling requests on to the user specified
-# marshaller.  This defaults to Marshal, but could be YAML or another.
-# After we have done a restore, the ObjectSpace is searched for instances of Prox to
-# add new objects to the list in AutomaticSnapshotMadeleine
+#
 #
     class Automatic_upgrade_marshaller #:nodoc:
       def Automatic_upgrade_marshaller.load(io)
@@ -21,62 +13,8 @@ module Madeleine
       end
       def Automatic_upgrade_marshaller.dump(obj, io = nil)
         Marshal.dump(obj)
-        x = Automatic_objects.new
-        x.instance_variable_set(:@sysid, Thread.current[:system].automatic_objects.sysid)
-        x.instance_variable_set(:@client_objects, Thread.current[:system].automatic_objects.client_objects)
-        x.root_proxy = Thread.current[:system].automatic_objects.client_objects[0]
-p x
-        Thread.current[:system].marshaller.dump(x, io)
+        Thread.current[:system].marshaller.dump(Thread.current[:system].automatic_objects, io)
       end
-    end
-
-#
-# This is the object that is marshalled in the upgrade process
-#
-    class Automatic_upgrade_objects #:nodoc:
-      attr_accessor :root_proxy
-      attr_reader :sysid, :client_objects
-      def initialize
-        @sysid = Thread.current[:system].sysid
-        @client_objects = []
-      end
-#
-# Add a client object to the list, return the myid for that object
-#
-      def add(client_object)
-p client_object
-        @client_objects << deproxify(client_object)
-        @client_objects.size - 1
-      end
-
-      def deproxify(o)
-        Thread.current[:deprox_memory] ||= {}
-        if (!Thread.current[:deprox_memory][o])
-          Thread.current[:deprox_memory][o] = true
-          if (o.class == Prox)
-            Automatic_proxy.new(deproxify(o.thing))
-          else
-            o.instance_variables.each {|iv|
-              ivsym = iv.intern
-              ivval = o.instance_variable_get(ivsym)
-              case ivval
-              when Array
-                arr = ivval.collect {|av| deproxify(av)}
-                o.instance_variable_set(ivsym, arr)
-              when Hash
-                ha = Hash.new
-                ivval.each {|k,v| ha[deproxify(k)] = deproxify(v)}
-                o.instance_variable_set(ivsym, ha)
-              when Range
-                o.instance_variable_set(ivsym, Range.new(deproxify(ivval.begin), deproxify(ivval.end), ivval.exclude_end?))
-              else                o.instance_variable_set(ivsym, deproxify(ivval))
-              end
-            }
-            o
-          end
-        end
-      end
-
     end
 
 #
@@ -94,28 +32,21 @@ p client_object
         end
       end
 #
-# Custom marshalling - this adds the internal id (myid) and the system id to a marshal
-# of the object we are the proxy for.
-# We take care to not marshal the same object twice, so circular references will work.
-# We ignore Thread.current[:system].marshaller here - this is only called by Marshal, and
-# marshal is always used for Command objects
+#
 #
       def _dump(depth)
-        if (Thread.current[:snapshot_memory])
-          if (!Thread.current[:snapshot_memory][self])
-            Thread.current[:snapshot_memory][self] = Automatic_proxy.new(@thing)            
-          end
-          Marshal.dump(Thread.current[:snapshot_memory][self])
-        else
-          [@myid.to_s, @sysid].pack("A8A30")  # never marshal a prox object in a command, just ref
+        if (!Thread.current[:snapshot_memory][0])
+          Thread.current[:snapshot_memory][0] = true
+          Thread.current[:system].automatic_objects.root_proxy = deproxify(self)
         end
+        ""
       end
 
 #
 # Custom marshalling for Marshal - restore a Prox object.
 #
       def Prox._load(str)
-        raise ArgumentError unless (AutomaticSnapshotMadeleine_upgrader === Thread.current[:system])
+        raise ArgumentError, "Old format: Snapshot then upgrade", caller unless (AutomaticSnapshotMadeleine_upgrader === Thread.current[:system])
         x = Prox.new(nil)
         a = str.unpack("A8A30a*")
         x.myid = a[0].to_i
@@ -124,11 +55,41 @@ p client_object
         x.thing = Marshal.load(a[2]) if (a[2] > "")
         x
       end
-
+#
+#
+#
+      def deproxify(o)
+        Thread.current[:deprox_memory] ||= {}
+        if (o.class == Prox)
+          Automatic_proxy.new(deproxify(o.thing))
+        else
+          if (!Thread.current[:deprox_memory][o])
+            Thread.current[:deprox_memory][o] = true
+            o.instance_variables.each {|iv|
+              ivsym = iv.intern
+              ivval = o.instance_variable_get(ivsym)
+              case ivval
+              when Array
+                arr = ivval.collect {|av| deproxify(av)}
+                o.instance_variable_set(ivsym, arr)
+              when Hash
+                ha = Hash.new
+                ivval.each {|k,v| ha[deproxify(k)] = deproxify(v)}
+                o.instance_variable_set(ivsym, ha)
+              when Range
+                o.instance_variable_set(ivsym, Range.new(deproxify(ivval.begin), deproxify(ivval.end), ivval.exclude_end?))
+              else
+                o.instance_variable_set(ivsym, deproxify(ivval))
+              end
+            }
+          end
+          o
+        end
+      end
     end
 
 #
-#
+# For upgrading automatic snapshot format
 #
     class AutomaticSnapshotMadeleine_upgrader
       attr_accessor :marshaller
@@ -192,7 +153,7 @@ p client_object
         begin
           Thread.current[:system] = self
           Thread.current[:snapshot_memory] = {}
-          @automatic_objects = Automatic_upgrade_objects.new
+          @automatic_objects = Automatic_objects.new
           @persister.take_snapshot
         ensure
           Thread.current[:snapshot_memory] = nil
@@ -210,13 +171,6 @@ p client_object
           # do nothing
         end
         @persister.close
-      end
-
-#
-# Pass on any other calls to the persister
-#
-      def method_missing(symbol, *args, &block)
-        @persister.send(symbol, *args, &block)
       end
     end
 
