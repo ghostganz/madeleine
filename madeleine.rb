@@ -28,12 +28,12 @@ module Madeleine
 
     def initialize(directory_name)
       @directory_name = directory_name
-      open_new_file
+      open_new_log
     end
 
     def reset
       delete_log_files
-      open_new_file
+      open_new_log
     end
 
     def store(command)
@@ -72,9 +72,9 @@ module Madeleine
       highest
     end
 
-    def open_new_file
-      name = CommandLog.file_name(highest_log + 1)
-      @log = open(@directory_name + File::SEPARATOR + name, 'w')
+    def open_new_log
+      name = NumberedFile.new(@directory_name, "command_log", highest_log + 1)
+      @log = open(name.to_s, 'w')
     end
   end
 
@@ -118,11 +118,7 @@ module Madeleine
     private
 
     def snapshot_name
-      Snapshot.name(highest_snapshot + 1)
-    end
-
-    def highest_snapshot
-      Snapshot.highest_id(@directory_name)
+      Snapshot.name(Snapshot.highest_id(@directory_name) + 1)
     end
   end
 
@@ -162,7 +158,8 @@ module Madeleine
     def recover_system(new_system)
       id = Snapshot.highest_id(@directory_name)
       if id > 0
-        open(@directory_name + File::SEPARATOR + Snapshot.name(id)) {|snapshot|
+        snapshot_file = NumberedFile.new(@directory_name, "snapshot", id).to_s
+        open(snapshot_file) {|snapshot|
           @system = Marshal.load(snapshot)
         }
       else
@@ -189,6 +186,21 @@ module Madeleine
       if ! File.exist?(@directory_name)
         Dir.mkdir(@directory_name)
       end
+    end
+  end
+
+  class NumberedFile
+
+    def initialize(path, name, id)
+      @path, @name, @id = path, name, id
+    end
+
+    def to_s
+      result = @path
+      result += File::SEPARATOR
+      result += sprintf("%0#{FILE_COUNTER_SIZE}d", @id)
+      result += '.'
+      result += @name
     end
   end
 

@@ -142,11 +142,22 @@ class PersistenceTest < Test::Unit::TestCase
     add(2,139)
     crash_recover
     verify(139)
+  end
+end
 
-    puts "OK"
+class NumberedFileTest < Test::Unit::TestCase
+
+  def test_main
+    target = Madeleine::NumberedFile.new(File::SEPARATOR + "foo", "bar", 321)
+    assert_equal(File::SEPARATOR + "foo" + File::SEPARATOR +
+                 "000000000000000000321.bar",
+                 target.to_s)
   end
 end
 
 
+suite = Test::Unit::TestSuite.new("Madeleine")
+suite << PersistenceTest.suite
+suite << NumberedFileTest.suite
 require 'test/unit/ui/console/testrunner'
-Test::Unit::UI::Console::TestRunner.run(PersistenceTest)
+Test::Unit::UI::Console::TestRunner.run(suite)
