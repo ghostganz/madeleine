@@ -1,9 +1,4 @@
 
-# Checks for a strange marshalling or IO bug observed in the
-# native win32-port of Ruby on WinXP.
-#
-# Test case provided by Steve Conover.
-
 class AddCommand
   def initialize(obj)
     @obj = obj
@@ -19,7 +14,12 @@ class Foo
 end
 
 
-class CorruptionTest < Test::Unit::TestCase
+# Checks for a strange marshalling or IO bug observed in the
+# native win32-port of Ruby on WinXP.
+#
+# Test case provided by Steve Conover.
+
+class WierdWin32CorruptionTest < Test::Unit::TestCase
   include TestUtils
 
   def teardown
@@ -57,6 +57,7 @@ class CorruptionTest < Test::Unit::TestCase
   end
 end
 
+
 def add_platforms_tests(suite)
-  suite << CorruptionTest.suite
+  suite << WierdWin32CorruptionTest.suite
 end
