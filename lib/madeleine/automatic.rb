@@ -4,9 +4,9 @@ module Madeleine
 #
 # Author::    Stephen Sykes <ruby@stephensykes.com>
 # Copyright:: Copyright (C) 2003
-# Version::   0.18
+# Version::   0.2
 #
-# This is EXPERIMENTAL
+# This is still experimental.
 #
 # Usage:
 #
@@ -212,11 +212,12 @@ module Madeleine
         @@systems[sid] = Thread.current[:system]
         Thread.critical = false
         @@systems[sid].sysid = sid
-        @@systems[sid].list.each_value {|o|  # set all the prox objects that already exist to have the right sysid
+        @@systems[sid].list.delete_if {|k,v|  # set all the prox objects that already exist to have the right sysid
           begin
-            ObjectSpace._id2ref(o).sysid = sid
+            ObjectSpace._id2ref(v).sysid = sid
+            false
           rescue RangeError
-            # Id was to a GC'd object
+            true # Id was to a GC'd object, delete it
           end
         }
       end
