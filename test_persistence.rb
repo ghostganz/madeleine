@@ -24,6 +24,8 @@ end
 
 class Addition
 
+  attr_reader :value
+
   def initialize(value)
     @value = value
   end
@@ -214,11 +216,35 @@ class TimeTest < Test::Unit::TestCase
   end
 end
 
+class CommandLogTest < Test::Unit::TestCase
+
+  def setup
+    @target = Madeleine::CommandLog.new(".", 4711)
+  end
+
+  def teardown
+    File.delete("000000000000000004711.command_log")
+  end
+
+  def test_logging
+    f = open("000000000000000004711.command_log", 'r')
+    assert(f.stat.file?)
+    @target.store(Addition.new(7))
+    read_command = Marshal.load(f)
+    assert_equal(Addition, read_command.class)
+    assert_equal(7, read_command.value)
+    assert(f.eof?)
+    @target.store(Addition.new(3))
+    read_command = Marshal.load(f)
+    assert_equal(3, read_command.value)
+  end
+end
 
 
 suite = Test::Unit::TestSuite.new("Madeleine")
-suite << PersistenceTest.suite
+suite << CommandLogTest.suite
 suite << NumberedFileTest.suite
+suite << PersistenceTest.suite
 suite << TimeTest.suite
 
 require 'test/unit/ui/console/testrunner'
