@@ -6,7 +6,6 @@
 
 require 'thread'
 require 'sync'
-#require '../rwlock'
 
 module Madeleine
 
