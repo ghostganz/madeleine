@@ -370,6 +370,7 @@ class AutomaticCustomMarshallerTest < AutoTest
     custom_m(SOAP::Marshal)
     custom_m(Madeleine::ZMarshal.new)
     custom_m(Madeleine::ZMarshal.new(YAML))
+    custom_m(Madeleine::ZMarshal.new(SOAP::Marshal))
   end
 
   def custom_m(marshaller)
