@@ -52,7 +52,7 @@ class SnapshotMadeleineTest < Test::Unit::TestCase
   def test_closing
     madeleine = SnapshotMadeleine.new(persistence_base) { "hello" }
     madeleine.close
-    assert_raises(RuntimeError) do
+    assert_raises(Madeleine::MadeleineClosedException) do
       madeleine.execute_command(Append.new("world"))
     end
   end
@@ -303,5 +303,15 @@ class SharedLockQueryTest < Test::Unit::TestCase
     end
     madeleine.execute_query(query)
     assert($was_shared)
+  end
+end
+
+
+class SantiyCheckTest < Test::Unit::TestCase
+
+  def test_sanity_check
+    target = Madeleine::SanityCheck.instance
+    target.run
+    target.run_once
   end
 end

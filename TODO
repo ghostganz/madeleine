@@ -1,10 +1,5 @@
 
-
-- Fix broken time-dependent unit test
 * Rolling snapshots, with age limit
-- Compressed snapshots
-- Full support for YAML snapshots
-- SOAP marshalling
 * Configurable log marshaller (or use the snapshot marshaller?)
 * Write a document about the different marshallers, for app. developers.
 

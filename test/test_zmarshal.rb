@@ -30,7 +30,7 @@ class ZMarshalTest < Test::Unit::TestCase
     assert_equal(object, result)
   end
 
-  def test_compression
+  def test_compression_is_useful
     target = Madeleine::ZMarshal.new(Marshal)
     object = "x" * 1000
 

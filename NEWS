@@ -1,4 +1,5 @@
 
+    * System sanity check at first use
     * Now creates full path to storage files, not just the last
       directory (reported by Wayne Vucenic)
 

@@ -21,6 +21,7 @@ module Madeleine
   require 'sync'
   require 'fileutils'
   require 'madeleine/files'
+  require 'madeleine/sanity'
 
   MADELEINE_VERSION = "0.7.1"
 
@@ -64,6 +65,8 @@ module Madeleine
     attr_reader :system
 
     def initialize(system, logger, snapshotter, lock, executer)
+      SanityCheck.instance.run_once
+
       @system = system
       @logger = logger
       @snapshotter = snapshotter
@@ -85,7 +88,7 @@ module Madeleine
     def execute_command(command)
       verify_command_sane(command)
       @lock.synchronize {
-        raise "closed" if @closed
+        raise MadeleineClosedException if @closed
         @logger.store(command)
         @executer.execute(command)
       }
@@ -148,6 +151,9 @@ module Madeleine
   end
 
   class InvalidCommandException < Exception
+  end
+
+  class MadeleineClosedException < RuntimeError
   end
 
   #
