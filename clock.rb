@@ -2,6 +2,8 @@
 # Copyright(c) Anders Bengtsson 2003
 #
 
+require 'madeleine'
+
 module Madeleine
   module Clock
 
@@ -52,9 +54,35 @@ module Madeleine
       end
     end
 
+    class TimeOptimizingCommandLogFactory
+      def create_log(directory_name)
+        TimeOptimizingCommandLog.new(directory_name)
+      end
+    end
+
     #
     # Internal classes below
     #
+
+    class TimeOptimizingCommandLog < CommandLog
+
+      def initialize(path)
+        super(path)
+        @pending_tick = nil
+      end
+
+      def store(command)
+        if command.kind_of?(Tick)
+          @pending_tick = command
+        else
+          if @pending_tick
+            super(@pending_tick)
+            @pending_tick = nil
+          end
+          super(command)
+        end
+      end
+    end
 
     class Clock
       attr_reader :time

@@ -7,6 +7,7 @@
 #
 
 require 'madeleine'
+require 'clock'
 require 'test/unit'
 
 class AddingSystem
@@ -219,33 +220,104 @@ end
 class CommandLogTest < Test::Unit::TestCase
 
   def setup
-    @target = Madeleine::CommandLog.new(".", 4711)
+    @target = Madeleine::CommandLog.new(".")
   end
 
   def teardown
-    File.delete("000000000000000004711.command_log")
+    File.delete(expected_file_name)
   end
 
   def test_logging
-    f = open("000000000000000004711.command_log", 'r')
+    f = open(expected_file_name, 'r')
     assert(f.stat.file?)
     @target.store(Addition.new(7))
     read_command = Marshal.load(f)
     assert_equal(Addition, read_command.class)
     assert_equal(7, read_command.value)
-    assert(f.eof?)
+    assert_equal(f.stat.size, f.tell)
     @target.store(Addition.new(3))
     read_command = Marshal.load(f)
     assert_equal(3, read_command.value)
+    assert_equal(f.stat.size, f.tell)
+  end
+
+  def expected_file_name
+    "000000000000000000001.command_log"
+  end
+end
+
+class TimeOptimizingCommandLogTest < CommandLogTest
+
+  def setup
+    @target = Madeleine::Clock::TimeOptimizingCommandLog.new(".")
+  end
+
+  def test_optimizing_ticks
+    f = open(expected_file_name, 'r')
+    assert(f.stat.file?)
+    assert_equal(0, f.stat.size)
+    @target.store(Madeleine::Clock::Tick.new(Time.at(3)))
+    assert_equal(0, f.stat.size)
+    @target.store(Madeleine::Clock::Tick.new(Time.at(22)))
+    assert_equal(0, f.stat.size)
+    @target.store(Addition.new(100))
+    tick = Marshal.load(f)
+    assert(tick.kind_of?(Madeleine::Clock::Tick))
+    assert_equal(22, value_of_tick(tick))
+    assert_equal(100, Marshal.load(f).value)
+    assert_equal(f.stat.size, f.tell)
+  end
+
+  def value_of_tick(tick)
+    system = Object.new
+    def system.forward_clock_to(time)
+      @value = time.to_i
+    end
+    def system.value
+      @value
+    end
+    tick.execute(system)
+    system.value
+  end
+
+end
+
+
+class LoggerTest < Test::Unit::TestCase
+
+  def test_creation
+    @log = Object.new
+    def @log.store(command)
+      unless defined? @commands
+        @commands = []
+      end
+      @commands << command
+    end
+    def @log.commands
+      @commands
+    end
+
+    log_factory = self
+    target = Madeleine::Logger.new("whoah", log_factory)
+    target.store(:foo)
+    assert(@log.commands.include?(:foo))
+  end
+
+  # Self-shunt
+  def create_log(directory_name)
+    @log
   end
 end
 
 
+
 suite = Test::Unit::TestSuite.new("Madeleine")
-suite << CommandLogTest.suite
 suite << NumberedFileTest.suite
+suite << CommandLogTest.suite
+suite << LoggerTest.suite
 suite << PersistenceTest.suite
 suite << TimeTest.suite
+suite << TimeOptimizingCommandLogTest.suite
 
 require 'test/unit/ui/console/testrunner'
 Test::Unit::UI::Console::TestRunner.run(suite)

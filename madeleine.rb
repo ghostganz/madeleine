@@ -4,18 +4,16 @@
 
 require 'thread'
 
-require 'clock'
-
 module Madeleine
 
   class SnapshotPrevayler
     attr_reader :system
 
-    def initialize(new_system, directory_name)
+    def initialize(new_system, directory_name, log_factory=DefaultLogFactory.new)
       @directory_name = directory_name
       ensure_directory_exists
       recover_system(new_system)
-      @logger = Logger.new(directory_name)
+      @logger = Logger.new(directory_name, log_factory)
       @lock = Mutex.new
     end
 
@@ -101,7 +99,8 @@ module Madeleine
       }
     end
 
-    def initialize(path, id)
+    def initialize(path)
+      id = CommandLog.highest_log(path) + 1
       super(path, "command_log", id)
       @file = open(name, 'w')
     end
@@ -115,12 +114,31 @@ module Madeleine
       @file.flush
       @file.fsync
     end
+
+    def self.highest_log(directory_name)
+      highest = 0
+      log_file_names(directory_name).each {|file_name|
+        match = /^(\d{#{FILE_COUNTER_SIZE}})/.match(file_name)
+        n = match[1].to_i
+        if n > highest
+          highest = n
+        end
+      }
+      highest
+    end
+  end
+
+  class DefaultLogFactory
+    def create_log(directory_name)
+      CommandLog.new(directory_name)
+    end
   end
 
   class Logger
 
-    def initialize(directory_name)
+    def initialize(directory_name, log_factory)
       @directory_name = directory_name
+      @log_factory = log_factory
       open_new_log
     end
 
@@ -149,20 +167,8 @@ module Madeleine
       }
     end
 
-    def highest_log
-      highest = 0
-      log_file_names.each {|file_name|
-        match = /^(\d{#{FILE_COUNTER_SIZE}})/.match(file_name)
-        n = match[1].to_i
-        if n > highest
-          highest = n
-        end
-      }
-      highest
-    end
-
     def open_new_log
-      @log = CommandLog.new(@directory_name, highest_log + 1)
+      @log = @log_factory.create_log(@directory_name)
     end
   end
 
