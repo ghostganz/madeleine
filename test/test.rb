@@ -1,7 +1,8 @@
-#!/usr/local/bin/ruby -w
+#!/usr/bin/env ruby
 #
 
 $LOAD_PATH.unshift("lib")
+$LOAD_PATH.unshift("test")
 
 require 'madeleine'
 require 'test/unit'
