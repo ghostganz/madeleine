@@ -13,7 +13,7 @@ module Madeleine
   class SnapshotMadeleine
     attr_reader :system
 
-    def initialize(new_system, directory_name, log_factory=DefaultLogFactory.new)
+    def initialize(new_system, directory_name)
       @directory_name = directory_name
       ensure_directory_exists
       recover_system(new_system)
@@ -38,6 +38,10 @@ module Madeleine
     end
 
     private
+
+    def log_factory
+      DefaultLogFactory.new
+    end
 
     def execute_without_storing(command)
       command.execute(system)

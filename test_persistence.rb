@@ -164,9 +164,8 @@ end
 class ClockedPersistenceTest < PersistenceTest
 
   def create_madeleine
-    Madeleine::SnapshotMadeleine.new(ClockedAddingSystem.new,
-                                     prevalence_base(),
-                                     Madeleine::Clock::TimeOptimizingCommandLogFactory.new)
+    Madeleine::Clock::ClockedSnapshotMadeleine.new(ClockedAddingSystem.new,
+                                                   prevalence_base())
   end
 
   def prevalence_base

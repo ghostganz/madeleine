@@ -7,6 +7,17 @@ require 'madeleine'
 module Madeleine
   module Clock
 
+    class ClockedSnapshotMadeleine < SnapshotMadeleine
+
+      def initialize(new_system, directory_name)
+        super(new_system, directory_name)
+      end
+
+      def log_factory
+        TimeOptimizingCommandLogFactory.new
+      end
+    end
+
     module ClockedSystem
 
       def time
