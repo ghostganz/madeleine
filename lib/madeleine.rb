@@ -16,12 +16,12 @@ module Madeleine
     def initialize(directory_name, marshaller=Marshal, &new_system_block)
       @directory_name = directory_name
       @marshaller = marshaller
+      @in_recovery = false
+      @closed = false
+      @lock = Mutex.new
       ensure_directory_exists
       recover_system(new_system_block)
       @logger = Logger.new(directory_name, log_factory)
-      @lock = Mutex.new
-      @in_recovery = false
-      @closed = false
     end
 
     def execute_command(command)
@@ -64,7 +64,7 @@ module Madeleine
 
     def recover_system(new_system_block)
       @in_recovery = true
-      id = Snapshot.highest_id(@directory_name)
+      id = SnapshotFile.highest_id(@directory_name)
       if id > 0
         snapshot_file = SnapshotFile.new(@directory_name, id).name
         open(snapshot_file) {|snapshot|
@@ -217,13 +217,6 @@ module Madeleine
 
   class SnapshotFile < NumberedFile
 
-    def initialize(directory_name, id)
-      super(directory_name, "snapshot", id)
-    end
-  end
-
-  class Snapshot
-
     def self.highest_id(directory_name)
       highest = 0
       Dir.foreach(directory_name) {|file_name|
@@ -237,13 +230,23 @@ module Madeleine
       highest
     end
 
+    def self.next(directory_name)
+      new(directory_name, highest_id(directory_name) + 1)
+    end
+
+    def initialize(directory_name, id)
+      super(directory_name, "snapshot", id)
+    end
+  end
+
+  class Snapshot
+
     def initialize(directory_name, system, marshaller)
       @directory_name, @system, @marshaller = directory_name, system, marshaller
     end
 
     def take
-      numbered_file = SnapshotFile.new(@directory_name,
-                                       Snapshot.highest_id(@directory_name) + 1)
+      numbered_file = SnapshotFile.next(@directory_name)
       name = numbered_file.name
       open(name + '.tmp', 'w') {|snapshot|
         @marshaller.dump(@system, snapshot)

@@ -2,7 +2,6 @@
 * More sample code
 * More documentation
 * Get it working on Windows
-* Closing a Madeleine cleanly (so we don't have to wait for GC to get files closed)
 * Transparent commands (using aspects)
 * DRb integration
 * Rollback
