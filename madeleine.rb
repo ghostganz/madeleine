@@ -51,12 +51,10 @@ module Madeleine
         @system = new_system
       end
 
-      Dir.foreach(@directory_name) {|file_name|
-        if CommandLog.command_file?(file_name)
-          open(@directory_name + File::SEPARATOR + file_name) {|log|
-            recover_log(log)
-          }
-        end
+      CommandLog.log_file_names(@directory_name).each {|file_name|
+        open(@directory_name + File::SEPARATOR + file_name) {|log|
+          recover_log(log)
+        }
       }
     end
 
@@ -83,8 +81,10 @@ module Madeleine
   class CommandLog
     class << self
 
-      def command_file?(file_name)
-        file_name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command\_log$/
+      def log_file_names(directory_name)
+        Dir.entries(directory_name).select {|name|
+          name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command\_log$/
+        }
       end
 
       def file_name(id)
@@ -121,9 +121,7 @@ module Madeleine
     private
 
     def log_file_names
-      Dir.entries(@directory_name).select {|name|
-        CommandLog.command_file?(name)
-      }
+      CommandLog.log_file_names(@directory_name)
     end
 
     def delete_log_files
