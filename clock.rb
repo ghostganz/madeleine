@@ -25,7 +25,7 @@ module Madeleine
     class TimeActor
 
       class << self
-        def launch(prevayler, delay=1.0)
+        def launch(prevayler, delay=0.1)
           result = new(prevayler, delay)
           result
         end
@@ -34,6 +34,7 @@ module Madeleine
       def destroy
         @is_destroyed = true
         @thread.wakeup
+        @thread.join
       end
 
       private
@@ -41,16 +42,16 @@ module Madeleine
       def initialize(prevayler, delay)
         @prevayler = prevayler
         @is_destroyed = false
-        launch(delay)
-      end
-
-      def launch(delay)
         @thread = Thread.new {
           until @is_destroyed
-            @prevayler.execute_command(Tick.new(Time.now))
+            send_tick
             sleep(delay)
           end
         }
+      end
+
+      def send_tick
+        @prevayler.execute_command(Tick.new(Time.now))
       end
     end
 
@@ -69,12 +70,17 @@ module Madeleine
       def initialize(path)
         super(path)
         @pending_tick = nil
+        @received_first_tick = false
       end
 
       def store(command)
         if command.kind_of?(Tick)
+          @received_first_tick = true
           @pending_tick = command
         else
+          if ! @received_first_tick
+            raise "Can't log command - no clock tick received yet"
+          end
           if @pending_tick
             super(@pending_tick)
             @pending_tick = nil

@@ -185,9 +185,20 @@ class TimeTest < Test::Unit::TestCase
     @last_time = Time.at(0)
 
     target = Madeleine::Clock::TimeActor.launch(self, 0.01)
+
+    # When launch() has returned it should have sent
+    # one synchronous clock-tick
+    # (This depends a little too much on that newly created
+    # threads are always scheduled)
+    assert_equal(1, @forward_calls)
+
     sleep(0.1)
     assert(@forward_calls > 1)
     target.destroy
+
+    @forward_calls = 0
+    sleep(0.1)
+    assert_equal(0, @forward_calls)
   end
 
   # Self-shunt
@@ -252,6 +263,24 @@ class TimeOptimizingCommandLogTest < CommandLogTest
     @target = Madeleine::Clock::TimeOptimizingCommandLog.new(".")
   end
 
+  def test_logging
+    # Must always start with a tick
+    @target.store(Madeleine::Clock::Tick.new(123))
+
+    f = open(expected_file_name, 'r')
+    assert(f.stat.file?)
+    @target.store(Addition.new(7))
+    assert_equal(123, value_of_tick(Marshal.load(f)))
+    read_command = Marshal.load(f)
+    assert_equal(Addition, read_command.class)
+    assert_equal(7, read_command.value)
+    assert_equal(f.stat.size, f.tell)
+    @target.store(Addition.new(3))
+    read_command = Marshal.load(f)
+    assert_equal(3, read_command.value)
+    assert_equal(f.stat.size, f.tell)
+  end
+
   def test_optimizing_ticks
     f = open(expected_file_name, 'r')
     assert(f.stat.file?)
@@ -266,6 +295,13 @@ class TimeOptimizingCommandLogTest < CommandLogTest
     assert_equal(22, value_of_tick(tick))
     assert_equal(100, Marshal.load(f).value)
     assert_equal(f.stat.size, f.tell)
+  end
+
+  def test_missing_a_tick
+    assert_raises(RuntimeError) {
+      not_a_tick = Addition.new(123)
+      @target.store(not_a_tick)
+    }
   end
 
   def value_of_tick(tick)
