@@ -103,7 +103,7 @@ module Madeleine
     # Execute a query on the prevalent system.
     #
     # Only differs from <tt>execute_command</tt> in that the command/query isn't logged, and
-    # therefore isn't allowed to modify the system. A lock is held, preventing other threads
+    # therefore isn't allowed to modify the system. A shared lock is held, preventing others
     # from modifying the system while the query is running.
     #
     # * <tt>query</tt> - The query command to execute
@@ -139,7 +139,7 @@ module Madeleine
     # Close the system.
     #
     # The log file is closed and no new commands can be received
-    # by this SnapshotMadeleine.
+    # by this Madeleine.
     def close
       @lock.synchronize {
         @logger.close

@@ -35,7 +35,7 @@ module Madeleine
     module Interceptor
       class <<self
         def included(klass)
-          class <<klass
+          class <<klass #:nodoc:
             alias_method :_old_new, :new
             def new(*args, &block)
               Prox.new(_old_new(*args, &block))

@@ -1,4 +1,6 @@
 
+* Move tests into "test" directory
+* Change license to something BSD-ish
 * Move all default implementations into a "Default" module
 * Introduce an object representing a log directory
 * Move recovery out of DefaultSnapshotMadeleine entirely
