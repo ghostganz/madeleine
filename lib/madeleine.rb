@@ -2,7 +2,7 @@
 # Madeleine - Ruby Object Prevalence
 #
 # Author::    Anders Bengtsson <ndrsbngtssn@yahoo.se>
-# Copyright:: Copyright(c) 2003
+# Copyright:: Copyright (c) 2003-2004
 #
 # Usage:
 #
@@ -22,7 +22,7 @@ module Madeleine
 
   class SnapshotMadeleine
 
-    # Creates a new SnapshotMadeleine instance. If there is a snapshot available
+    # Builds a new Madeleine instance. If there is a snapshot available
     # then the system will be created from that, otherwise
     # <tt>new_system</tt> will be used. The state of the system will
     # then be restored from the command logs.
@@ -32,6 +32,8 @@ module Madeleine
     # <tt>snapshot_marshaller</tt> must respond to
     # <tt>load(stream)</tt> and <tt>dump(object, stream)</tt>. You
     # must use the same marshaller every time for a system.
+    #
+    # See: DefaultSnapshotMadeleine
     #
     # * <tt>directory_name</tt> - Storage directory to use. Will be created if needed.
     # * <tt>snapshot_marshaller</tt> - Marshaller to use for system snapshots. (Optional)
@@ -54,6 +56,8 @@ module Madeleine
 
       DefaultSnapshotMadeleine.new(system, logger, snapshotter, lock, executer)
     end
+
+    private
 
     def self.recover_log(executer, directory_name)
       log_recoverer = LogRecoverer.new(executer, directory_name)
@@ -159,7 +163,7 @@ module Madeleine
   # Internal classes below
   #
 
-  FILE_COUNTER_SIZE = 21
+  FILE_COUNTER_SIZE = 21 #:nodoc:
 
   class DefaultLock #:nodoc:
 

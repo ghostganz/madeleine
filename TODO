@@ -1,6 +1,6 @@
 
+* Move all default implementations into a "Default" module
 * Introduce an object representing a log directory
-* Make sure the docs aren't broken after the re-design
 * Move recovery out of DefaultSnapshotMadeleine entirely
 * Write an example with a web server
 
