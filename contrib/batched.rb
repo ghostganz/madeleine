@@ -178,30 +178,50 @@ module Madeleine
 
     class SimplisticPipe
       def initialize 
-        @first = Mutex.new.lock 
-        @second = Mutex.new.lock 
-        @messages = [] 
+        @receive_lock = Mutex.new.lock 
+        @consume_lock = Mutex.new.lock 
+        @message = nil
       end
 
       def receive
         begin
-          @first.lock
-          yield @messages
-          @messages
+          wait_for_message_received
+
+          if block_given?
+            yield @message
+          else
+            return @message
+          end
+
         ensure
-          @messages = []
-          @second.unlock
+          message_consumed
         end
       end
 
-      def send(*messages)
-        @messages = *messages
-        @first.unlock
-        @second.lock
-        @second.lock if not @second.locked?
+      def send(message)
+        @message = message
+        message_received
+        wait_for_message_consumed
+      end
+
+      private
+      
+      def wait_for_message_received
+        @receive_lock.lock
+      end
+
+      def message_received
+        @receive_lock.unlock
+      end
+
+      def wait_for_message_consumed
+        @consume_lock.lock
+      end
+
+      def message_consumed
+        @consume_lock.unlock
       end
     end
-
   end
 end
 
