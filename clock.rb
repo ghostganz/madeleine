@@ -24,11 +24,9 @@ module Madeleine
 
     class TimeActor
 
-      class << self
-        def launch(prevayler, delay=0.1)
-          result = new(prevayler, delay)
-          result
-        end
+      def self.launch(prevayler, delay=0.1)
+        result = new(prevayler, delay)
+        result
       end
 
       def destroy

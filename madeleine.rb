@@ -181,20 +181,17 @@ module Madeleine
 
   class Snapshot
 
-    class << self
-
-      def highest_id(directory_name)
-        highest = 0
-        Dir.foreach(directory_name) {|file_name|
-          match = /^(\d{#{FILE_COUNTER_SIZE}}\.snapshot$)/.match(file_name)
-          next unless match
-          n = match[1].to_i
-          if n > highest
-            highest = n
-          end
-        }
-        highest
-      end
+    def self.highest_id(directory_name)
+      highest = 0
+      Dir.foreach(directory_name) {|file_name|
+        match = /^(\d{#{FILE_COUNTER_SIZE}}\.snapshot$)/.match(file_name)
+        next unless match
+        n = match[1].to_i
+        if n > highest
+          highest = n
+        end
+      }
+      highest
     end
 
     def initialize(directory_name, system)
