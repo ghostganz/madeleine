@@ -352,7 +352,7 @@ end
 class CommandVerificationTest < Test::Unit::TestCase
 
   def teardown
-#    Dir.delete("foo")
+    Dir.delete("foo")
   end
 
   def test_broken_command
