@@ -368,31 +368,7 @@ class AutomaticCustomMarshallerTest < AutoTest
   def test_main
     custom_m(YAML)
     custom_m(Madeleine::ZMarshal.new)
-    simple_custom_m(Madeleine::ZMarshal.new(YAML))
-  end
-
-  def simple_custom_m(marshaller)
-    dir = prevalence_base
-    delete_directory(dir)
-    @system_bases << dir
-    mad_h = make_system(dir) { G.new }
-    mad_h.system.yy.w = "abc"
-    mad_h.take_snapshot
-    mad_h.system.yy.w += "d"
-    assert_equal("abcd", mad_h.system.yy.w, "Custom marshalling after snapshot+commands with normal marshaller")
-    mad_h.marshaller = marshaller
-    mad_h.system.yy.w += "e"
-    assert_equal("abcde", mad_h.system.yy.w, "Custom marshalling after snapshot+commands+change marshaller+commands")
-    mad_h.take_snapshot
-    mad_h.close
-    mad_h = make_system(dir, marshaller) { G.new }
-    assert_equal("abcde", mad_h.system.yy.w, 
-                 "Custom marshalling after snapshot+commands+change marshaller+commands+snapshot+restore")
-    mad_h.system.yy.w += "f"
-    mad_h.close
-    mad_h = make_system(dir, marshaller) { G.new }
-    assert_equal("abcdef", mad_h.system.yy.w, "Custom marshalling snapshot custom+commands+restore")
-    mad_h.close
+    custom_m(Madeleine::ZMarshal.new(YAML))
   end
 
   def custom_m(marshaller)

@@ -148,7 +148,7 @@ module Madeleine
     class Automatic_marshaller #:nodoc:
       def Automatic_marshaller.load(io)
         restored_obj = Deserialize.load(io, Thread.current[:system].marshaller)
-        ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (!o.frozen? && o.sysid == restored_obj.sysid)}
+        ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (o.sysid == restored_obj.sysid)}
         restored_obj
       end
       def Automatic_marshaller.dump(obj, stream = nil)
@@ -242,7 +242,7 @@ module Madeleine
         @myid_count = 0                                               # This sysid will be used only if new
         @list = {}                                                    # object is taken by madeleine
         Thread.current[:system] = self # during system startup system should not create commands
-        AutomaticSnapshotMadeleine.register_sysid(@sysid) # this sysid may be overridden
+#        AutomaticSnapshotMadeleine.register_sysid(@sysid) # this sysid may be overridden
         @marshaller = marshaller # until attrb
         begin
           @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
@@ -317,10 +317,15 @@ module Madeleine
         @@systems
       end
 #
-# Close method freezes up the Prox objects so they can't be mistaken for real ones in a new system before GC gets them
+# Close method changes the sysid for Prox objects so they can't be mistaken for real ones in a new 
+# system before GC gets them
 #
       def close
-        @list.each_key {|k| myid2ref(k).freeze}
+        begin
+          @list.each_key {|k| myid2ref(k).sysid = nil}
+        rescue RangeError
+          # do nothing
+        end
         @persister.close
       end
 
@@ -335,31 +340,56 @@ module Madeleine
 
     class Deserialize #:nodoc:
 #
-# Detect marshal format, and return deserialized object using the right marshaller
-# If detection didn't work, use the marshaller given in the optional 2nd argument
+# Detect format of an io stream. Leave it rewound.
 #
-      def Deserialize.load(io, marshaller=Marshal)
+      def Deserialize.detect(io)
         c = io.getc
         c1 = io.getc
         io.rewind
         if (c == Marshal::MAJOR_VERSION && c1 <= Marshal::MINOR_VERSION)
-          Marshal.load(io)
+          Marshal
+        elsif (c == 31 && c1 == 139) # gzip magic numbers
+          ZMarshal
         else
           while (s = io.gets)
             break if (s !~ /^\s*#/ && s !~ /^\s*$/) # ignore blank and comment lines
           end
           io.rewind
           if (s && s =~ /^\s*---/) # "---" is the yaml header
-            YAML.load(io)
+            YAML
           else
-            if (marshaller.class != ZMarshal && c == 31 && c1 == 139) # gzip magic numbers
-              marshaller = ZMarshal.new(marshaller)
-            end
-            marshaller.load(io)
+            nil # failed to detect
           end
         end
       end
-
+#
+# Try to deserialize object.  If there was an error, try to detect marshal format, 
+# and return deserialized object using the right marshaller
+# If detection didn't work, raise up the exception
+#
+      def Deserialize.load(io, marshaller=Marshal)
+        begin
+          marshaller.load(io)
+        rescue Exception => e
+          io.rewind
+          detected_marshaller = detect(io)
+          if (detected_marshaller == ZMarshal)
+            zio = Zlib::GzipReader.new(io)
+            detected_zmarshaller = detect(zio)
+            zio.finish
+            io.rewind
+            if (detected_zmarshaller)
+              ZMarshal.new(detected_zmarshaller).load(io)
+            else
+              marshaller.load(io)
+            end
+          elsif (detected_marshaller)
+            detected_marshaller.load(io)
+          else
+            raise e
+          end
+        end
+      end
     end
 
   end
