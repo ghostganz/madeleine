@@ -9,6 +9,7 @@ end
 require 'madeleine'
 require 'test/unit'
 require 'stringio'
+require 'sillymock'
 
 class ExampleCommand
   attr :value
@@ -23,15 +24,6 @@ class ExampleCommand
 end
 
 class CommandLogTest < Test::Unit::TestCase
-
-  class MockFile < StringIO
-    def fsync
-      @was_fsynced = true
-      super
-    end
-
-    attr :was_fsynced
-  end
 
   def test_file_opening
     file_service = Object.new
@@ -61,7 +53,7 @@ class CommandLogTest < Test::Unit::TestCase
       if flags != "wb"
         raise "wrong flags"
       end
-      MockFile.new
+      StringIO.new
     end
     def file_service.was_open_called
       @was_open_called
@@ -72,39 +64,21 @@ class CommandLogTest < Test::Unit::TestCase
   end
 
   def test_writing_command
-    file_service = Object.new
-    def file_service.exist?(path)
-      [
-        ["some", "path"].join(File::SEPARATOR),
-      ].include?(path)
-    end
-    def file_service.dir_entries(path, &block)
-      if path != ["some", "path"].join(File::SEPARATOR)
-        raise "wrong path"
-      end
-      []
-    end
-    def file_service.open(path, flags)
-      @file = MockFile.new
-      @file
-    end
-    def file_service.file
-      @file
-    end
-    def file_service.verify
-      unless @file.was_fsynced
-        raise "file wasn't fsynced"
-      end
-    end
     command = ExampleCommand.new(1234)
+    file = Mock.new
+    file.expects(:write, [Marshal.dump(command)])
+    file.expects(:flush)
+    file.expects(:fsync)
+
+    file_service = Mock.new
+    file_service.expects(:exist?, ["some/path"]).return_value(true)
+    file_service.expects(:dir_entries, ["some/path"]).return_value([])
+    file_service.expects(:open).return_value(file)
 
     target = Madeleine::CommandLog.new("some/path", file_service)
     target.store(command)
 
+    file.verify
     file_service.verify
-
-    file_service.file.rewind
-    assert_equal(Marshal.dump(command), file_service.file.read)
   end
 end
-
