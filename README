@@ -40,17 +40,15 @@ Usage:
 
 Requirements:
 
-    * Ruby 1.8
+    * Ruby 1.8.1 or later
 
-    Additionaly, the sample code also uses ruby/tk and Distributed
-    Ruby (DRb).
+    Additionaly, some of the sample code also uses ruby/tk.
+
 
 Known problems:
 
     * Won't run in some Windows-ports of Ruby due to missing
       fsync() call.
-    * Unit tests break in Windows due to different file deletion
-      semantics.
 
 Contact:
 

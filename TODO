@@ -4,7 +4,7 @@
 * Rolling snapshots, with age limit
 - Compressed snapshots
 - Full support for YAML snapshots
-* SOAP marshalling?
+- SOAP marshalling
 * Configurable log marshaller (or use the snapshot marshaller?)
 * Write a document about the different marshallers, for app. developers.
 
@@ -13,7 +13,7 @@
 * Move recovery out of DefaultSnapshotMadeleine entirely
 * Write an example with a web server
 
-* Ability to supply mock logger (to unit test without I/O)
+* Replace filesystem with mock objects for unit testing.
 * ClockCommand
 * Integrate batched-writes in SnapshotMadeleine
 * More sample code
