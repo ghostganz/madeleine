@@ -35,7 +35,6 @@ module Madeleine
 
     def take_snapshot
       @lock.synchronize {
-        raise "closed" if @closed
         @logger.close
         Snapshot.new(@directory_name, system, @marshaller).take
         @logger.reset

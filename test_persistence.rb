@@ -79,9 +79,6 @@ class SnapshotMadeleineTest < Test::Unit::TestCase
     assert_raises(RuntimeError) do
       madeleine.execute_command(Append.new("world"))
     end
-    assert_raises(RuntimeError) do
-      madeleine.take_snapshot
-    end
   end
 end
 
@@ -112,7 +109,7 @@ class PersistenceTest < Test::Unit::TestCase
 
   def clear_prevalence_base
     @madeleines.each {|madeleine|
-      madeleine.take_snapshot
+      madeleine.close
     }
     @madeleines.clear
     delete_prevalence_files(prevalence_base())
