@@ -1,8 +1,7 @@
 #!/usr/local/bin/ruby -w
 #
 # Copyright(c) 2003 Stephen Sykes
-#
-# Some components taken from test_persistence.rb
+# &
 # Copyright(c) 2003 Anders Bengtsson
 #
 
@@ -44,7 +43,7 @@ end
 
 class F
   include Madeleine::Automatic::Interceptor
-  attr_accessor :z
+  attr_accessor :z,:a
   def plus1
     @z += 1
   end
@@ -120,30 +119,37 @@ class AutoTest < Test::Unit::TestCase
     }
   end
 
+  def simpletest(n)
+    pb = prevalence_base + n.to_s
+    mad_a = create_new_system(A, pb)
+    mad_a.close
+    mad_a1 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(pb) { A.new }
+    assert_equal(1, mad_a1.system.k, "No commands or snapshot")
+    mad_a1.system.z = 0
+    mad_a1.system.z += 1
+    assert_equal(1, mad_a1.system.z, "Object changes")
+    mad_a1.system.z -= 10
+    assert_equal(-9, mad_a1.system.z, "Object changes")
+    mad_a1.close
+    mad_a2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(pb) { A.new }
+    assert_equal(-9, mad_a2.system.z, "Commands but no snapshot")
+    mad_a2.take_snapshot
+    mad_a2.close
+    mad_a3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(pb) { A.new }
+    assert_equal(-9, mad_a3.system.z, "Snapshot but no commands")
+    mad_a3.system.z -= 6
+    mad_a3.system.z -= 3
+    mad_a3.close
+    mad_a4 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(pb) { A.new }
+    assert_equal(-18, mad_a4.system.z, "Snapshot and commands")
+    mad_a4.close
+  end
 end
 
 # Basic test, and that system works in SAFE level 1
 class BasicTest < AutoTest
   def test_main
-    mad_a = create_new_system(A, prevalence_base)
-    mad_a.close
-    mad_a0 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { A.new }
-    assert_equal(1, mad_a0.system.k, "No commands or snapshot")
-    mad_a0.system.z = 0
-    mad_a0.system.z += 1
-    assert_equal(1, mad_a0.system.z, "Object changes")
-    mad_a0.system.z -= 10
-    assert_equal(-9, mad_a0.system.z, "Object changes")
-    mad_a0.close
-    mad_a2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { A.new }
-    assert_equal(-9, mad_a2.system.z, "Commands but no snapshot")
-    mad_a2.take_snapshot
-    mad_a3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { A.new }
-    assert_equal(-9, mad_a3.system.z, "Snapshot but no commands")
-    mad_a3.system.z -= 6
-    mad_a3.system.z -= 3
-    mad_a4 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { A.new }
-    assert_equal(-18, mad_a4.system.z, "Snapshot and commands")
+    simpletest(1)
   end
 
   def test_main_in_safe_level_one
@@ -161,6 +167,7 @@ class ObjectOutsideTest < AutoTest
     assert_raises(RuntimeError) {
                  mad.system.z = A.new  # app object created outside system
                }
+    mad.close
   end
 end
 
@@ -172,8 +179,10 @@ class BlockGivenTest < AutoTest
     assert_raises(RuntimeError) {
                    mad.system.yielder {|a| a}
                  }
+    mad.close
     mad2 = create_new_system(I, prevalence_base+"2")
     assert(mad2.system.testyield, "Internal block passing")
+    mad2.close
   end
 end
 
@@ -200,6 +209,7 @@ class NonPersistedObjectTest < AutoTest
     mad_b2.close
     mad_b3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
     assert_equal("hello again", mad_b3.system.y.a.w, "Non persisted object after restore (back to snapshotted state)")
+    mad_b3.close
   end
 end
 
@@ -233,16 +243,30 @@ class RefInExternalObjTest < AutoTest
     mad_c4 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { B.new(0) }
     assert_equal(4, mad_c4.system.s.w.x, "Value via external object after snapshot+commands/restore")
     assert_equal(4, mad_c4.system.y.x, "Direct value after snapshot+commands/restore")
+    mad_c4.close
   end
 end
 
 class BasicThreadSafetyTest < AutoTest
   def test_main
+    x = Thread.new {
+          simpletest(1)
+        }
+    y = Thread.new {
+          simpletest(2)
+        }
+    x.join
+    y.join
+  end
+end
+    
+class ThreadConfidenceTest < AutoTest
+  def test_main
     mad_d = create_new_system(F, prevalence_base)
     mad_d.system.z = 0
     mad_e = create_new_system(G, prevalence_base+"2")
     mad_e.system.y.w = 0
-    
+
     x = []
     25.times {|n|
       x[n] = Thread.new {
@@ -256,8 +280,8 @@ class BasicThreadSafetyTest < AutoTest
     25.times {|n|
       x[n].join
     }
-    assert_equal(125, mad_d.system.z, "mad_d.z")
-    assert_equal(-125, mad_e.system.y.w, "mad_e.y.w")
+    assert_equal(125, mad_d.system.z, "125 commands")
+    assert_equal(-125, mad_e.system.y.w, "125 commands")
 
     mad_e.close
     mad_e2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base+"2") { G.new }
@@ -271,15 +295,13 @@ class BasicThreadSafetyTest < AutoTest
                }
            }
     }
-    sleep(0.1)
-    mad_d.take_snapshot
-    mad_e2.take_snapshot
     25.times {|n|
       x[n].join
     }
-    assert_equal(250, mad_d.system.z, "mad_d.z")
-    assert_equal(-250, mad_e2.system.y.w, "mad_e2.y.w")
-  
+    assert_equal(250, mad_d.system.z, "restore/125 commands")
+    assert_equal(-250, mad_e2.system.y.w, "restore/125 commands")
+    mad_d.close
+    mad_e2.close
   end
 end
 
@@ -291,6 +313,7 @@ class InvalidMethodTest < AutoTest
                    mad_f.system.not_a_method
                  }
     assert_equal(-1, mad_f.system.z, "System functions after NoMethodError")
+    mad_f.close
   end
 end
 
@@ -310,10 +333,11 @@ class CircularReferenceTest < AutoTest
     mad_g3.close
     mad_g4 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { G.new }
     assert_equal(1, mad_g4.system.y.w.y.w.y.w.a, "Circular reference after snapshot+commands/restore")
+    mad_g4.close
   end
 end
 
-class AutomaticCustomMarshalllerTest < AutoTest
+class AutomaticCustomMarshallerTest < AutoTest
   def load(from)
     if (from.kind_of?(IO))
       s = from.read
@@ -346,29 +370,28 @@ class AutomaticCustomMarshalllerTest < AutoTest
     mad_h.close
     mad_h2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(dir, self) { A.new }
     assert_equal("abcd", mad_h2.system.z, "Custom marshalling after snapshot+commands/restore")
+    mad_h2.close
   end
 end
 
-# tests thread safety during system creation
+# tests thread safety during system creation, particularly that different system ids are generated
 class ThreadedStartupTest < AutoTest
   def test_main
     x,mad = [],[]
     20.times {|n|
       x[n] = Thread.new {
-               sleep(rand/10)
+               sleep(rand/100)
                mad[n] = create_new_system(F, prevalence_base+n.to_s)
-               mad[n].system.z = 0
-               n.times {
-                 mad[n].system.plus1
-               }
-               assert_equal(n, mad[n].system.z, "mad[#{n}].z")
-               mad[n].take_snapshot if (n%2 == 0)
+               mad[n].system.z = n
+               assert_equal(n, mad[n].system.z, "object change mad[#{n}].z")
+               mad[n].close
              }
     }
     20.times {|n|
       x[n].join
       mad_i = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base+n.to_s) { F.new }
-      assert_equal(n, mad_i.system.z, "mad[#{n}].z")
+      assert_equal(n, mad_i.system.z, "restored mad[#{n}].z")
+      mad_i.close
     }
   end
 end
@@ -382,12 +405,13 @@ def add_automatic_tests(suite)
   suite << RefInExternalObjTest.suite
   suite << InvalidMethodTest.suite
   suite << CircularReferenceTest.suite
-  suite << AutomaticCustomMarshalllerTest.suite
+  suite << AutomaticCustomMarshallerTest.suite
+  suite << BasicThreadSafetyTest.suite
 end
 
 def add_slow_automatic_tests(suite)
+  suite << ThreadConfidenceTest.suite
   suite << ThreadedStartupTest.suite
-  suite << BasicThreadSafetyTest.suite
 end
 
 if __FILE__ == $0
