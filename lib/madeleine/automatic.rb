@@ -212,8 +212,8 @@ module Madeleine
         @@systems[sid] = Thread.current[:system]
         Thread.critical = false
         @@systems[sid].sysid = sid 
-        @@systems[sid].list.each {|o|  # set all the prox objects that already exist to have the right sysid
-                         ObjectSpace._id2ref(o[1]).sysid = sid
+        @@systems[sid].list.each_value {|o|  # set all the prox objects that already exist to have the right sysid
+                         ObjectSpace._id2ref(o).sysid = sid
                        }
       end
 #
