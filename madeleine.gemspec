@@ -6,12 +6,15 @@ spec = Gem::Specification.new do |s|
   s.version = '0.6'
   s.platform = Gem::Platform::RUBY
   s.summary = "Madeleine is a Ruby implementation of Object Prevalence"
-  s.files = Dir.glob("lib/**/*.rb")
   s.require_path = 'lib'
   s.autorequire = 'madeleine'
   s.author = "Anders Bengtsson"
   s.email = "ndrsbngtssn@yahoo.se"
   s.homepage = "http://madeleine.sourceforge.net"
+  s.files = Dir.glob("lib/**/*.rb")
+  s.files += Dir.glob("samples/**/*.rb")
+  s.files += Dir.glob("contrib/**/*.rb")
+  s.files += ['README', 'NEWS', 'COPYING']
 end
 
 if $0 == __FILE__
