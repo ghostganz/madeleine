@@ -1,4 +1,7 @@
 
+    * Now creates full path to storage files, not just the last
+      directory (reported by Wayne Vucenic)
+
 Madeleine 0.7.1 (August 22, 2004):
 
     * ZMarshal changed to work around Zlib bug.

@@ -19,6 +19,7 @@ module Madeleine
 
   require 'thread'
   require 'sync'
+  require 'fileutils'
   require 'madeleine/files'
 
   MADELEINE_VERSION = "0.7.1"
@@ -309,7 +310,7 @@ module Madeleine
 
     def ensure_directory_exists
       if ! File.exist?(@directory_name)
-        Dir.mkdir(@directory_name)
+        FileUtils.mkpath(@directory_name)
       end
     end
 
