@@ -28,7 +28,7 @@ module Madeleine
 
   module Automatic
 #
-# This module shoule be included in any classes that are to be persisted.
+# This module should be included in any classes that are to be persisted.
 # It will intercept method calls and make sure they are converted into commands that are logged by Madeleine.
 # It does this by returning a Prox object that is a proxy for the real object.
 #
