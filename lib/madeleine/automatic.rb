@@ -171,13 +171,17 @@ module Madeleine
       def method_missing(symbol, *args, &block)
 #      print "Sending #{symbol} to #{@thing.to_s}, myid=#{@myid}, sysid=#{@sysid}\n"
         raise NoMethodError, "Undefined method" unless @thing.respond_to?(symbol)
-        if (Thread.current[:system] || @thing.read_only_methods.include?(symbol))
+        if (Thread.current[:system])
           @thing.send(symbol, *args, &block)
         else
           raise "Cannot make command with block" if block_given?
           Thread.current[:system] = AutomaticSnapshotMadeleine.systems[@sysid]
           begin
-            result = Thread.current[:system].execute_command(Command.new(symbol, @myid, *args))
+            if (@thing.read_only_methods.include?(symbol))
+              result = Thread.current[:system].execute_query(Command.new(symbol, @myid, *args))
+            else
+              result = Thread.current[:system].execute_command(Command.new(symbol, @myid, *args))
+            end
           ensure
             Thread.current[:system] = false
           end
