@@ -1,6 +1,7 @@
 require 'yaml'
 require 'madeleine/zmarshal'
 require 'soap/marshal'
+require 'madeleine/upgrade_snapshot'
 
 module Madeleine
 
@@ -71,10 +72,12 @@ module Madeleine
 # keeping track of which methods are read only
 #
       def self.included(klass)
+        klass.instance_eval do
+          @auto_read_only_flag = false
+          @read_only_methods = []
+        end
         class <<klass #:nodoc:
           alias_method :_old_new, :new
-          @@auto_read_only_flag = false
-          @@read_only_methods = []
 
           def new(*args, &block)
             Automatic_proxy.new(_old_new(*args, &block))
@@ -83,16 +86,16 @@ module Madeleine
 # Called when a method added - remember symbol if read only 
 #
           def method_added(symbol)
-            @@read_only_methods << symbol if @@auto_read_only_flag
+            self.instance_eval {@read_only_methods << symbol if @auto_read_only_flag}
           end
 #
 # Set the read only flag, or add read only methods
 #
           def automatic_read_only(*list)
             if (list == [])
-              @@auto_read_only_flag = true
+              self.instance_eval {@auto_read_only_flag = true}
             else
-              list.each {|s| @@read_only_methods << s}
+              list.each {|s| self.instance_eval {@read_only_methods << s}}
             end
           end
 #
@@ -100,19 +103,25 @@ module Madeleine
 #
           def automatic_read_write(*list)
             if (list == [])
-              @@auto_read_only_flag = false
+              self.instance_eval {@auto_read_only_flag = false}
             else
-              list.each {|s| @@read_only_methods.delete(s)}
+              list.each {|s| self.instance_eval {@read_only_methods.delete(s)}}
             end
           end
 
         end
       end
 #
-# Return the list of read only methods so Prox#method_missing can find what to and what not to make into a command
+# Return the list of read only methods so Automatic_proxy#method_missing can find what to and what not to make into a command
 #
       def read_only_methods
-        @@read_only_methods
+        self.class.instance_eval {@read_only_methods}
+      end
+#
+# Cannot pass self to other objects, need to pass the proxy.  Users can use proxy to get a new proxy.
+#
+      def proxy
+        Automatic_proxy.new(self)
       end
     end
 
@@ -153,11 +162,9 @@ module Madeleine
 #
     class Automatic_proxy #:nodoc:
       def initialize(client_object)
-        if (client_object)
-          raise "App object created outside of app" unless Thread.current[:system]
-          @sysid = Thread.current[:system].automatic_objects.sysid
-          @myid = Thread.current[:system].automatic_objects.add(client_object)
-        end
+        raise "App object created outside of app" unless Thread.current[:system]
+        @sysid = Thread.current[:system].automatic_objects.sysid
+        @myid = Thread.current[:system].automatic_objects.add(client_object)
       end
       def automatic_client_object
         AutomaticSnapshotMadeleine.systems[@sysid].automatic_objects.client_objects[@myid]
@@ -167,19 +174,20 @@ module Madeleine
 # outside the system.
 #
       def method_missing(symbol, *args, &block)
-        if (Thread.current[:system])
-          Thread.current[:system].add_system(@sysid)
-          @sysid = Thread.current[:system].automatic_objects.sysid
+        cursys = Thread.current[:system]
+        if (cursys)
+          cursys.add_system(@sysid)
+          @sysid = cursys.automatic_objects.sysid
         end
         thing = automatic_client_object
 #      print "Sending #{symbol} to #{thing.to_s}, myid=#{@myid}, sysid=#{@sysid}\n"
         raise NoMethodError, "Undefined method" unless thing.respond_to?(symbol)
-        if (Thread.current[:system])
+        if (cursys)
           thing.send(symbol, *args, &block)
         else
           raise "Cannot make command with block" if block_given?
-          Thread.current[:system] = AutomaticSnapshotMadeleine.systems[@sysid]
           begin
+            Thread.current[:system] = AutomaticSnapshotMadeleine.systems[@sysid]
             if (thing.read_only_methods.include?(symbol))
               result = Thread.current[:system].execute_query(Command.new(symbol, self, *args))
             else
@@ -192,11 +200,15 @@ module Madeleine
         end
       end
 #
-# We need to override == so that users see their own objects.  There may be more than one
+# We need to override == so that users can compare their own objects.  There may be more than one
 # Automatic_proxy object that refers to the same client object.
 #
       def ==(other)
-        automatic_client_object == other.automatic_client_object
+        if (other.respond_to? :automatic_client_object)
+          automatic_client_object == other.automatic_client_object
+        else
+          automatic_client_object == other
+        end
       end
     end
 
@@ -211,18 +223,18 @@ module Madeleine
 # Add a client object to the list, return the myid for that object
 #
       def add(client_object)
-        @client_objects << client_object
-        @client_objects.size - 1
-      end
+        @client_objects << client_object unless (@client_objects.include? client_object)
+        @client_objects.index client_object
+     end
     end
 #
 # The AutomaticSnapshotMadeleine class contains an instance of the persister
 # (default is SnapshotMadeleine) and provides additional automatic functionality.
 #
 # The class keeps a record of all the systems that currently exist.
-# Each instance of the class keeps a record of Prox objects in that system by internal id (myid).
+# Each instance of the class keeps a record of Automatic_proxy objects in that system.
 #
-# We also add functionality to take_snapshot in order to set things up so that the custom Prox object 
+# We also add functionality to take_snapshot in order to set things up so that the custom 
 # marshalling will work correctly.
 #
     class AutomaticSnapshotMadeleine
@@ -231,11 +243,23 @@ module Madeleine
       def initialize(directory_name, marshaller=Marshal, persister=SnapshotMadeleine, &new_system_block)
         @automatic_objects = Automatic_objects.new
         Thread.current[:system] = self # during system startup system should not create commands
-        @marshaller = marshaller # until attrb
+        @marshaller = marshaller
         add_system
         begin
           @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
           @automatic_objects.root_proxy = @persister.system
+        rescue ArgumentError => e
+          if (!@upgraded)
+            p "Upgrading system..."
+            upgradesys = AutomaticSnapshotMadeleine_upgrader.new(directory_name, marshaller, persister, &new_system_block)
+            upgradesys.take_snapshot
+            upgradesys.close
+            p "Upgraded."
+            @upgraded = true
+            retry
+          else
+            raise e
+          end
         ensure
           Thread.current[:system] = false
         end
@@ -254,13 +278,13 @@ module Madeleine
 #
 # Returns the hash containing the systems. 
 #
-      def AutomaticSnapshotMadeleine.systems
+      def AutomaticSnapshotMadeleine.systems  #:nodoc:
         @@systems
       end
 #
 # Add this system to the systems
 #
-      def add_system(sysid = automatic_objects.sysid)
+      def add_system(sysid = automatic_objects.sysid)  #:nodoc:
         Thread.critical = true
         @@systems ||= {}  # holds systems by sysid
         Thread.critical = false
@@ -269,7 +293,7 @@ module Madeleine
 #
 # Pass on any other calls to the persister
 #
-      def method_missing(symbol, *args, &block)
+      def method_missing(symbol, *args, &block)  #:nodoc:
         @persister.send(symbol, *args, &block)
       end
     end
