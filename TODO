@@ -3,6 +3,7 @@
 * Compressed snapshots
 * Full support for YAML snapshots
 * SOAP marshalling?
+* Configurable log marshaller (or use the snapshot marshaller?)
 
 * Move all default implementations into a "Default" module
 * Introduce an object representing a log directory
@@ -14,7 +15,6 @@
 * Integrate batched-writes in SnapshotMadeleine
 * More sample code
 * More documentation
-* Get it working on Windows
 * DRb integration
 * Rollback
 * Handle broken logs?

@@ -1,4 +1,7 @@
 
+    * YAML snapshots supported while using automatic commands
+    * Read-only methods for automatic commands
+
 Madeleine 0.6.1 (March 30, 2004):
 
     * Bug fix: Use binary mode for I/O, fixes log replay
