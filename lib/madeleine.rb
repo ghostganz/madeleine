@@ -46,12 +46,20 @@ module Madeleine
                                     snapshot_marshaller)
       lock = DefaultLock.new
       
-      DefaultSnapshotMadeleine.new(directory_name,
-                                   logger,
-                                   recoverer,
-                                   snapshotter,
-                                   lock,
-                                   new_system_block)
+      system = recoverer.recover_snapshot(new_system_block)
+
+      executer = Executer.new(system)
+
+      recover_log(executer, directory_name)
+
+      DefaultSnapshotMadeleine.new(system, logger, snapshotter, lock, executer)
+    end
+
+    def self.recover_log(executer, directory_name)
+      log_recoverer = LogRecoverer.new(executer, directory_name)
+      executer.recovery {
+        log_recoverer.recover_logs
+      }
     end
   end
 
@@ -60,19 +68,14 @@ module Madeleine
     # The prevalent system
     attr_reader :system
 
-    def initialize(directory_name, logger, recoverer, snapshotter, lock, new_system_block)
+    def initialize(system, logger, snapshotter, lock, executer)
+      @system = system
       @logger = logger
       @snapshotter = snapshotter
       @lock = lock
+      @executer = executer
 
       @closed = false
-      @system = recoverer.recover_snapshot(new_system_block)
-      @executer = Executer.new(@system)
-
-      log_recoverer = LogRecoverer.new(@executer, directory_name)
-      @executer.recovery {
-        log_recoverer.recover_logs
-      }
     end
 
     # Execute a command on the prevalent system.
