@@ -1,3 +1,5 @@
+require 'yaml'
+
 module Madeleine
 
 # Automatic commands for Madeleine
@@ -130,23 +132,7 @@ module Madeleine
         Thread.current[:system].myid2ref(@myid).thing.send(@symbol, *@args)
       end
     end
-#
-# This is a little class to pass to SnapshotMadeleine.  This is used for snapshots only. 
-# It acts as the marshaller, and just passes marshalling requests on to the user specified
-# marshaller.  This defaults to Marshal, but could be YAML or another.
-# After we have done a restore, the ObjectSpace is searched for instances of Prox to
-# add new objects to the list in AutomaticSnapshotMadeleine
-#
-    class Automatic_marshaller
-      def Automatic_marshaller.load(arg)
-        restored_obj = Thread.current[:system].marshaller.load(arg)
-        ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (o.sysid == restored_obj.sysid)}
-        restored_obj
-      end
-      def Automatic_marshaller.dump(obj, stream = nil)
-        Thread.current[:system].marshaller.dump(obj, stream)
-      end
-    end
+
 #
 # A Prox object is generated and returned by Interceptor each time a system object is created.
 #
@@ -211,6 +197,33 @@ module Madeleine
         x
       end
 
+      def to_yaml_type # Doesn't seem to be needed?
+        "madeleine,2004/Prox"
+      end
+
+      def to_yaml(opts = {})
+        YAML.quick_emit(nil, opts) {|out|
+          out.map("!madeleine,2004/Prox") {|map|
+            map.add("myid", @myid.to_s)
+            map.add("sysid", @sysid)
+            if Thread.current[:snapshot_memory] and not Thread.current[:snapshot_memory][self]
+              Thread.current[:snapshot_memory][self] = true
+              map.add("thing", @thing)
+            end
+          }
+        }
+      end
+
+      YAML.add_domain_type("madeleine,2004", "Prox") {|type, val|
+        x = Prox.new(nil)
+        x.myid = val["myid"].to_i
+        x.sysid = val["sysid"]
+        x = Thread.current[:system].restore(x)
+        if val["thing"]
+          x.thing = val["thing"]
+        end
+        x
+      }
     end
 
 #
@@ -235,7 +248,8 @@ module Madeleine
         AutomaticSnapshotMadeleine.register_sysid(@sysid) # this sysid may be overridden
         @marshaller = marshaller # until attrb
         begin
-          @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
+          # @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
+          @persister = persister.new(directory_name, marshaller, &new_system_block)
           AutomaticSnapshotMadeleine.register_sysid(@sysid) # needed if there were no commands
         ensure
           Thread.current[:system] = false
@@ -252,7 +266,7 @@ module Madeleine
 # Restore a marshalled proxy object to list - myid_count is increased as required.
 # If the object already exists in the system then the existing object must be used.
 #
-      def restore(proxo)  
+      def restore(proxo)
         if (@list[proxo.myid] && proxo.sysid == myid2ref(proxo.myid).sysid) 
           proxo = myid2ref(proxo.myid)
         else
