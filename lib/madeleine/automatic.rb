@@ -72,10 +72,6 @@ module Madeleine
 # keeping track of which methods are read only
 #
       def self.included(klass)
-        klass.instance_eval do
-          @auto_read_only_flag = false
-          @read_only_methods = []
-        end
         class <<klass
           alias_method :_old_new, :new
 
@@ -84,9 +80,20 @@ module Madeleine
           end
 #
 # Called when a method added - remember symbol if read only 
+# This is a good place to add in any superclass's read only methods also
 #
           def method_added(symbol)
-            self.instance_eval {@read_only_methods << symbol if @auto_read_only_flag}
+            self.instance_eval {
+              @read_only_methods ||= []
+              @auto_read_only_flag ||= false
+              @read_only_methods << symbol if @auto_read_only_flag
+              c = self
+              while (c = c.superclass)
+                if (c.instance_eval {instance_variables.include? "@read_only_methods"})
+                  @read_only_methods |= c.instance_eval {@read_only_methods}
+                end
+              end
+            }
           end
 #
 # Set the read only flag, or add read only methods
@@ -95,7 +102,7 @@ module Madeleine
             if (list == [])
               self.instance_eval {@auto_read_only_flag = true}
             else
-              list.each {|s| self.instance_eval {@read_only_methods << s}}
+              list.each {|s| self.instance_eval {@read_only_methods ||= []; @read_only_methods << s}}
             end
           end
 #
@@ -105,14 +112,14 @@ module Madeleine
             if (list == [])
               self.instance_eval {@auto_read_only_flag = false}
             else
-              list.each {|s| self.instance_eval {@read_only_methods.delete(s)}}
+              list.each {|s| self.instance_eval {@read_only_methods ||= []; @read_only_methods.delete(s)}}
             end
           end
 
         end
       end
 #
-# Return the list of read only methods so Prox#method_missing can find what to and what not to make into a command
+# Return the list of read only methods so Automatic_proxy#method_missing can find what to and what not to make into a command
 #
       def read_only_methods
         self.class.instance_eval {@read_only_methods}
