@@ -24,6 +24,10 @@ class AddingSystem
   end
 end
 
+class ClockedAddingSystem < AddingSystem
+  include Madeleine::Clock::ClockedSystem
+end
+
 class Addition
 
   attr_reader :value
@@ -36,7 +40,6 @@ class Addition
     system.add(@value)
   end
 end
-
 
 class PersistenceTest < Test::Unit::TestCase
 
@@ -81,9 +84,12 @@ class PersistenceTest < Test::Unit::TestCase
   end
 
   def crash_recover
-    @madeleine =
-      Madeleine::SnapshotMadeleine.new(AddingSystem.new, prevalence_base())
+    @madeleine = create_madeleine()
     @madeleines << @madeleine
+  end
+
+  def create_madeleine
+    Madeleine::SnapshotMadeleine.new(AddingSystem.new, prevalence_base())
   end
 
   def snapshot
@@ -154,6 +160,21 @@ class PersistenceTest < Test::Unit::TestCase
   end
 end
 
+
+class ClockedPersistenceTest < PersistenceTest
+
+  def create_madeleine
+    Madeleine::SnapshotMadeleine.new(ClockedAddingSystem.new,
+                                     prevalence_base(),
+                                     Madeleine::Clock::TimeOptimizingCommandLogFactory.new)
+  end
+
+  def prevalence_base
+    "ClockedPrevalenceBase"
+  end
+end
+
+
 class NumberedFileTest < Test::Unit::TestCase
 
   def test_main
@@ -221,14 +242,16 @@ class TimeTest < Test::Unit::TestCase
   end
 
   def test_clocked_system
-    target = Madeleine::Clock::ClockedSystem.new
-    assert_equal(Time.at(0), target.time)
+    target = Object.new
+    target.extend(Madeleine::Clock::ClockedSystem)
     t1 = Time.at(10000)
     target.forward_clock_to(t1)
     assert_equal(t1, target.time)
-
+    t2 = Time.at(20000)
+    target.forward_clock_to(t2)
+    assert_equal(t2, target.time)
     reloaded_target = Marshal.load(Marshal.dump(target))
-    assert_equal(t1, reloaded_target.time)
+    assert_equal(t2, reloaded_target.time)
   end
 end
 
@@ -301,13 +324,6 @@ class TimeOptimizingCommandLogTest < CommandLogTest
     assert_equal(f.stat.size, f.tell)
   end
 
-  def test_missing_a_tick
-    assert_raises(RuntimeError) {
-      not_a_tick = Addition.new(123)
-      @target.store(not_a_tick)
-    }
-  end
-
   def value_of_tick(tick)
     system = Object.new
     def system.forward_clock_to(time)
@@ -365,15 +381,29 @@ class CommandVerificationTest < Test::Unit::TestCase
 end
 
 
+class ClockedSystemTest < Test::Unit::TestCase
+  
+  def test_taking_time_on_uninitialized_system
+    target = Object.new
+    target.extend(Madeleine::Clock::ClockedSystem)
+    assert_raises(RuntimeError) {
+      target.time
+    }
+  end
+
+end
+
 
 suite = Test::Unit::TestSuite.new("Madeleine")
 suite << NumberedFileTest.suite
 suite << CommandLogTest.suite
 suite << LoggerTest.suite
 suite << PersistenceTest.suite
+suite << ClockedPersistenceTest.suite
 suite << TimeTest.suite
 suite << TimeOptimizingCommandLogTest.suite
 suite << CommandVerificationTest.suite
+suite << ClockedSystemTest.suite
 
 require 'test/unit/ui/console/testrunner'
 Test::Unit::UI::Console::TestRunner.run(suite)

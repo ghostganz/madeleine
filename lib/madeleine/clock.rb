@@ -7,18 +7,28 @@ require 'madeleine'
 module Madeleine
   module Clock
 
-    class ClockedSystem
-
-      def initialize
-        @clock = Clock.new
-      end
+    module ClockedSystem
 
       def time
-        @clock.time
+        verify_clock_initialized
+        clock.time
       end
 
       def forward_clock_to(newTime)
-        @clock.forward_to(newTime)
+        clock.forward_to(newTime)
+      end
+
+      def clock
+        unless defined? @clock
+          @clock = Clock.new
+        end
+        @clock
+      end
+
+      def verify_clock_initialized
+        unless defined? @clock
+          raise "Trying to get time before clock initialized"
+        end
       end
     end
 
@@ -69,17 +79,12 @@ module Madeleine
       def initialize(path)
         super(path)
         @pending_tick = nil
-        @received_first_tick = false
       end
 
       def store(command)
         if command.kind_of?(Tick)
-          @received_first_tick = true
           @pending_tick = command
         else
-          if ! @received_first_tick
-            raise "Can't log command - no clock tick received yet"
-          end
           if @pending_tick
             super(@pending_tick)
             @pending_tick = nil
