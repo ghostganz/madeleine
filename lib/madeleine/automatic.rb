@@ -244,7 +244,7 @@ module Madeleine
         @marshaller = marshaller # until attrb
         begin
           @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
-          @@systems[@sysid].list.delete_if {|k,v|  # set all the prox objects that now exist to have the right sysid
+          @list.delete_if {|k,v|  # set all the prox objects that now exist to have the right sysid
             begin
               ObjectSpace._id2ref(v).sysid = @sysid
               false
