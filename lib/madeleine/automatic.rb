@@ -4,7 +4,7 @@
 # This is EXPERIMENTAL
 #
 # Copyright(c) Stephen Sykes 2003
-# Version 0.11
+# Version 0.15
 #
 # Usage:
 # class A
@@ -91,8 +91,13 @@ module Madeleine
       end
     
       def _dump(depth)
-        if (Thread.current[:taking_snapshot])
-          [@myid.to_s, @sysid].pack("A8A30") + Thread.current[:syscont].marshaller.dump(@thing, depth)
+        if (Thread.current[:snapshot_memory])
+          if (Thread.current[:snapshot_memory][self])
+            [@myid.to_s, @sysid].pack("A8A30")
+          else
+            Thread.current[:snapshot_memory][self] = true
+            [@myid.to_s, @sysid].pack("A8A30") + Thread.current[:syscont].marshaller.dump(@thing, depth)
+          end
         else
           [@myid.to_s, @sysid].pack("A8A30")
         end
@@ -103,8 +108,9 @@ module Madeleine
         a = str.unpack("A8A30a*")
         x.myid = a[0].to_i
         x.sysid = a[1]
+        x = Thread.current[:syscont].restore(x)
         x.thing = Thread.current[:syscont].marshaller.load(a[2]) if (a[2] > "")
-        Thread.current[:syscont].restore(x)
+        x
       end
     end
 
@@ -138,9 +144,10 @@ module Madeleine
         @list[@obj_count += 1] = proxo.object_id
         @obj_count
       end
-      
+
       def restore(proxo)  # restore a marshalled proxy object to list - obj_count is increased as required
-        if (@list[proxo.myid] && proxo.sysid == listid2ref(proxo.myid).sysid) # if we already have this system's object, use that
+        # if we already have this system's object, use that
+        if (@list[proxo.myid] && proxo.sysid == listid2ref(proxo.myid).sysid) 
           proxo = listid2ref(proxo.myid)
         else
           @list[proxo.myid] = proxo.object_id
@@ -158,10 +165,10 @@ module Madeleine
       def take_snapshot
         begin
           Thread.current[:syscont] = self
-          Thread.current[:taking_snapshot] = true
+          Thread.current[:snapshot_memory] = {}
           super
         ensure
-          Thread.current[:taking_snapshot] = false
+          Thread.current[:snapshot_memory] = nil
           Thread.current[:syscont] = false
         end
       end
