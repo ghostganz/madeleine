@@ -158,7 +158,7 @@ end
 class TimeTest < Test::Unit::TestCase
 
   def test_clock
-    target = Madeleine::Clock.new
+    target = Madeleine::Clock::Clock.new
     assert_equal(0, target.time.to_i)
     assert_equal(0, target.time.usec)
 
@@ -181,7 +181,7 @@ class TimeTest < Test::Unit::TestCase
     @forward_calls = 0
     @last_time = Time.at(0)
 
-    target = Madeleine::TimeActor.launch(self, 0.01)
+    target = Madeleine::Clock::TimeActor.launch(self, 0.01)
     sleep(0.1)
     assert(@forward_calls > 1)
     target.destroy
@@ -203,7 +203,7 @@ class TimeTest < Test::Unit::TestCase
   end
 
   def test_clocked_system
-    target = Madeleine::ClockedSystem.new
+    target = Madeleine::Clock::ClockedSystem.new
     assert_equal(Time.at(0), target.time)
     t1 = Time.at(10000)
     target.forward_clock_to(t1)
