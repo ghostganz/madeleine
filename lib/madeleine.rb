@@ -216,7 +216,7 @@ module Madeleine
       id = SnapshotFile.highest_id(@directory_name)
       if id > 0
         snapshot_file = SnapshotFile.new(@directory_name, id).name
-        open(snapshot_file) {|snapshot|
+        open(snapshot_file, "rb") {|snapshot|
           system = @marshaller.load(snapshot)
         }
       else
@@ -234,7 +234,7 @@ module Madeleine
 
     def recover_logs
       CommandLog.log_file_names(@directory_name).each {|file_name|
-        open(@directory_name + File::SEPARATOR + file_name) {|log|
+        open(@directory_name + File::SEPARATOR + file_name, "rb") {|log|
           recover_log(log)
         }
       }
@@ -280,7 +280,7 @@ module Madeleine
     def initialize(path)
       id = CommandLog.highest_log(path) + 1
       super(path, "command_log", id)
-      @file = open(name, 'w')
+      @file = open(name, 'wb')
     end
 
     def close
@@ -406,7 +406,7 @@ module Madeleine
     def take(system)
       numbered_file = SnapshotFile.next(@directory_name)
       name = numbered_file.name
-      open(name + '.tmp', 'w') {|snapshot|
+      open(name + '.tmp', 'wb') {|snapshot|
         @marshaller.dump(system, snapshot)
         snapshot.flush
         snapshot.fsync

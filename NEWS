@@ -1,4 +1,9 @@
 
+Madeleine 0.6.1 (not yet released):
+
+    * Bug fix: Open files in binary mode.
+      Non-binary broke log replay on some win32 ports of Ruby.
+
 Madeleine 0.6 (March 28, 2004):
 
     * Changed license to BSD

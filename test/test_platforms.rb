@@ -23,7 +23,7 @@ class WierdWin32CorruptionTest < Test::Unit::TestCase
   include TestUtils
 
   def teardown
-    (1..4).each {|i|
+    (1..5).each {|i|
       delete_directory("corruption_test#{i}")
     }
   end
@@ -33,7 +33,6 @@ class WierdWin32CorruptionTest < Test::Unit::TestCase
   
     f = Foo.new()
     f.myid = idstr
-    #puts "len->#{f.myid.length}, #{f.myid}"
 
     m.execute_command(AddCommand.new(f))
     m.close()
@@ -55,8 +54,11 @@ class WierdWin32CorruptionTest < Test::Unit::TestCase
   def testNoErrorTwo
     doCorruptionTest("1234567890123456789012", "4")
   end
-end
 
+  def testWhiteSpace
+    doCorruptionTest("\n\r\t \r\n", "5")
+  end
+end
 
 def add_platforms_tests(suite)
   suite << WierdWin32CorruptionTest.suite
