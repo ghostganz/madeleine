@@ -1,7 +1,6 @@
 
 * More sample code
 * More documentation
-- Other marshalling options (YAML, etc)
 * Get it working on Windows
 * Transparent commands (using aspects)
 * Rollback

@@ -62,12 +62,20 @@ Thread.new(madeleine) {|madeleine|
 }
 </pre>
 
+
+<h2>Madeleine::Clock::Clock</h2>
+
+<p>Keeps track of time in a <code>ClockedSystem</code>.
+
+<div class="instanceMethod">time()</div>
+
+<p>Returns the system's time as a Ruby <code>Time</code>.
+
 <h2>Madeleine::Clock::ClockedSnapshotMadeleine</h2>
 
 <p><b>Extends: <code>Madeleine::SnapshotMadeleine</code></b>
 
 <p>Optimizes the logging of commands from a <code>TimeActor</code>.
-
 
 <h2>Madeleine::Clock::ClockedSystem</h2>
 
@@ -75,7 +83,9 @@ Thread.new(madeleine) {|madeleine|
 machine time. Used together with a <code>TimeActor</code> that keeps
 the clock current.
 
-<p>...
+<div class="instanceMethod">clock()</div>
+
+<p>Returns this system's <code>Clock</code>.
 
 <h2>Madeleine::Clock::TimeActor</h2>
 
@@ -98,7 +108,7 @@ dealt with in a deterministic way.
 
 <hr>
 
-<tt>$Id: api.html,v 1.4 2003/04/01 20:41:36 ndrs Exp $</tt>
+<tt>$Id: api.html,v 1.5 2003/04/02 20:22:43 ndrs Exp $</tt>
 
 </body>
 </html>

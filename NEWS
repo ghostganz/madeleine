@@ -1,0 +1,8 @@
+
+
+Madeleine 0.2:
+
+    * Supports custom marshalling implementations.
+    * Changed interface for ClockedSystem and Clock.
+    * Some documentation added, including API docs.
+
