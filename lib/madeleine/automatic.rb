@@ -3,10 +3,8 @@ module Madeleine
 # Automatic commands for Madeleine
 #
 # Author::    Stephen Sykes <ruby@stephensykes.com>
-# Copyright:: Copyright (C) 2003
+# Copyright:: Copyright (C) 2003-2004
 # Version::   0.2
-#
-# This is still experimental.
 #
 # Usage:
 #
@@ -19,7 +17,7 @@ module Madeleine
 #
 #  end
 #
-#  mad = Madeleine::Automatic::AutomaticSnapshotMadeleine.new("storage_directory") { A.new(param1, ...) }
+#  mad = AutomaticSnapshotMadeleine.new("storage_directory") { A.new(param1, ...) }
 #
 #  mad.system.some_method(paramA, ...)
 #
