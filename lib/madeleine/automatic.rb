@@ -6,7 +6,7 @@ module Madeleine
 
 # Automatic commands for Madeleine
 #
-# Author::    Stephen Sykes <ruby@stephensykes.com>
+# Author::    Stephen Sykes <sds@stephensykes.com>
 # Copyright:: Copyright (C) 2003-2004
 # Version::   0.4
 #
@@ -22,7 +22,8 @@ module Madeleine
 # Should you require it, the snapshots can be stored as yaml, and can be compressed.  Just pass 
 # the marshaller you want to use as the second argument to AutomaticSnapshotMadeleine.new.  
 # If the passed marshaller did not successfully deserialize the latest snapshot, the system 
-# will try to automatically detect and read either Marshal, YAML, SOAP, or compressed Marshal or YAML.
+# will try to automatically detect and read either Marshal, YAML, SOAP, or their corresponding
+# compressed versions.
 #
 # This module is designed to work correctly in the case there are multiple madeleine systems in use by
 # a single program, and is also safe to use with threads.
@@ -226,6 +227,17 @@ module Madeleine
 #
 # The AutomaticSnapshotMadeleine class contains an instance of the persister
 # (default is SnapshotMadeleine) and provides additional automatic functionality.
+#
+# The class is instantiated the same way as SnapshotMadeleine:
+# madeleine_sys = AutomaticSnapshotMadeleine.new("storage_directory") { A.new(param1, ...) }
+# The second initialisation parameter is the persister.  Supported persisters are:
+#
+# * Marshal  (default)
+# * YAML
+# * SOAP::Marshal
+# * Madeleine::ZMarshal.new(Marshal)
+# * Madeleine::ZMarshal.new(YAML)
+# * Madeleine::ZMarshal.new(SOAP::Marshal)
 #
 # The class keeps a record of all the systems that currently exist.
 # Each instance of the class keeps a record of Prox objects in that system by internal id (myid).
