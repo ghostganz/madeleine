@@ -4,12 +4,8 @@
 # Copyright(c) 2003-2004 Anders Bengtsson
 #
 
-$LOAD_PATH.unshift("lib")
-
-require 'madeleine'
-require 'madeleine/automatic'
-require 'test/unit'
-#require 'contrib/batched.rb' # uncomment if testing batched
+$LOAD_PATH.unshift("test")
+require 'test_automatic_common'
 
 class A
   include Madeleine::Automatic::Interceptor
@@ -39,30 +35,6 @@ end
 # direct changes in this class are not saved, except at snapshot
 class D
   attr_accessor :w
-end
-
-class F
-  include Madeleine::Automatic::Interceptor
-  attr_accessor :z,:a
-  def plus1
-    @z += 1
-  end
-end
-
-class G
-  include Madeleine::Automatic::Interceptor
-  attr_accessor :yy,:a
-  def initialize
-    @yy = H.new
-  end
-end
-
-class H
-  include Madeleine::Automatic::Interceptor
-  attr_accessor :w
-  def minus1
-    @w -= 1
-  end
 end
 
 class I
@@ -119,78 +91,10 @@ class M
   end
 end
 
-class AutoTest < Test::Unit::TestCase
-
-  def persister
-    SnapshotMadeleine
-  end
-
-  def delete_directory(directory_name)
-    return unless File.exist?(directory_name)
-    Dir.foreach(directory_name) do |file|
-      next if file == "."
-      next if file == ".."
-      assert(File.delete(directory_name + File::SEPARATOR + file) == 1,
-             "Unable to delete #{file}")
-    end
-    Dir.delete(directory_name)
-  end
-
-  def create_new_system(klass, dir, *arg)
-    delete_directory(dir)
-    Thread.critical = true
-    @system_bases << dir
-    Thread.critical = false
-    make_system(dir) { klass.new(*arg) }
-  end
-
-  def make_system(dir, marshaller=Marshal, &block)
-    AutomaticSnapshotMadeleine.new(dir, marshaller, persister, &block)
-  end
-
-  def prevalence_base
-    "AutoPrevalenceTestBase" + self.class.to_s
-  end
-
-  def setup
-    @system_bases = []
-  end
-
-  def teardown
-    @system_bases.each {|dir| 
-      delete_directory(dir)
-    }
-  end
-
-  def simpletest(n)
-    pb = prevalence_base + n.to_s
-    mad_a = create_new_system(A, pb)
-    mad_a.close
-    mad_a1 = make_system(pb) { A.new }
-    assert_equal(1, mad_a1.system.k, "No commands or snapshot")
-    mad_a1.system.z = 0
-    mad_a1.system.z += 1
-    assert_equal(1, mad_a1.system.z, "Object changes")
-    mad_a1.system.z -= 10
-    assert_equal(-9, mad_a1.system.z, "Object changes")
-    mad_a1.close
-    mad_a2 = make_system(pb) { A.new }
-    assert_equal(-9, mad_a2.system.z, "Commands but no snapshot")
-    mad_a2.take_snapshot
-    mad_a2.close
-    mad_a3 = make_system(pb) { A.new }
-    assert_equal(-9, mad_a3.system.z, "Snapshot but no commands")
-    mad_a3.system.z -= 6
-    mad_a3.system.z -= 3
-    mad_a3.close
-    mad_a4 = make_system(pb) { A.new }
-    assert_equal(-18, mad_a4.system.z, "Snapshot and commands")
-    mad_a4.close
-  end
-end
-
 # Basic test, and that system works in SAFE level 1
-class BasicTest < AutoTest
+class BasicTest < Test::Unit::TestCase
+  include AutoTest
+
   def test_main
     simpletest(1)
   end
@@ -204,7 +108,9 @@ class BasicTest < AutoTest
   end
 end
 
-class ObjectOutsideTest < AutoTest
+class ObjectOutsideTest < Test::Unit::TestCase
+  include AutoTest
+
   def test_main
     mad = create_new_system(A, prevalence_base)
     assert_raises(RuntimeError) {
@@ -216,7 +122,9 @@ end
 
 # Passing a block when it would generate a command is not allowed because blocks cannot
 # be serialised.  However, block passing/yielding inside the application is ok.
-class BlockGivenTest < AutoTest
+class BlockGivenTest < Test::Unit::TestCase
+  include AutoTest
+
   def test_main
     mad = create_new_system(J, prevalence_base)
     assert_raises(RuntimeError) {
@@ -229,7 +137,9 @@ class BlockGivenTest < AutoTest
   end
 end
 
-class NonPersistedObjectTest < AutoTest
+class NonPersistedObjectTest < Test::Unit::TestCase
+  include AutoTest
+
   def test_main
     mad_b = create_new_system(B, prevalence_base, 0)
     mad_b.system.yy.x -= 1
@@ -256,7 +166,9 @@ class NonPersistedObjectTest < AutoTest
   end
 end
 
-class RefInExternalObjTest < AutoTest
+class RefInExternalObjTest < Test::Unit::TestCase
+  include AutoTest
+
   def test_main
     mad_c = create_new_system(B, prevalence_base, 0)
     x = D.new
@@ -290,7 +202,9 @@ class RefInExternalObjTest < AutoTest
   end
 end
 
-class BasicThreadSafetyTest < AutoTest
+class BasicThreadSafetyTest < Test::Unit::TestCase
+  include AutoTest
+
   def test_main
     x = Thread.new {
           simpletest(1)
@@ -302,53 +216,10 @@ class BasicThreadSafetyTest < AutoTest
     y.join
   end
 end
-    
-class ThreadConfidenceTest < AutoTest
-  def test_main
-    mad_d = create_new_system(F, prevalence_base)
-    mad_d.system.z = 0
-    mad_e = create_new_system(G, prevalence_base+"2")
-    mad_e.system.yy.w = 0
 
-    x = []
-    25.times {|n|
-      x[n] = Thread.new {
-               5.times {
-                 sleep(rand/10)
-                 mad_d.system.plus1
-                 mad_e.system.yy.minus1
-               }
-           }
-    }
-    25.times {|n|
-      x[n].join
-    }
-    assert_equal(125, mad_d.system.z, "125 commands")
-    assert_equal(-125, mad_e.system.yy.w, "125 commands")
+class InvalidMethodTest < Test::Unit::TestCase
+  include AutoTest
 
-    mad_e.close
-    mad_e2 = make_system(prevalence_base+"2") { G.new }
-
-    25.times {|n|
-      x[n] = Thread.new {
-               5.times {
-                 sleep(rand/10)
-                 mad_d.system.plus1
-                 mad_e2.system.yy.minus1
-               }
-           }
-    }
-    25.times {|n|
-      x[n].join
-    }
-    assert_equal(250, mad_d.system.z, "restore/125 commands")
-    assert_equal(-250, mad_e2.system.yy.w, "restore/125 commands")
-    mad_d.close
-    mad_e2.close
-  end
-end
-
-class InvalidMethodTest < AutoTest
   def test_main
     mad_f = create_new_system(A, prevalence_base)
     mad_f.system.z = -1
@@ -360,7 +231,9 @@ class InvalidMethodTest < AutoTest
   end
 end
 
-class CircularReferenceTest < AutoTest
+class CircularReferenceTest < Test::Unit::TestCase
+  include AutoTest
+
   def test_main
     mad_g = create_new_system(G, prevalence_base)
     mad_g.system.yy.w = mad_g.system
@@ -389,7 +262,9 @@ class CircularReferenceTest < AutoTest
   end
 end
 
-class AutomaticCustomMarshallerTest < AutoTest
+class AutomaticCustomMarshallerTest < Test::Unit::TestCase
+  include AutoTest
+
   def test_main
     custom_m(YAML)
     custom_m(SOAP::Marshal)
@@ -469,30 +344,10 @@ class AutomaticCustomMarshallerTest < AutoTest
   end
 end
 
-# tests thread safety during system creation, particularly that different system ids are generated
-class ThreadedStartupTest < AutoTest
-  def test_main
-    x,mad = [],[]
-    20.times {|n|
-      x[n] = Thread.new {
-               sleep(rand/100)
-               mad[n] = create_new_system(F, prevalence_base+n.to_s)
-               mad[n].system.z = n
-               assert_equal(n, mad[n].system.z, "object change mad[#{n}].z")
-               mad[n].close
-             }
-    }
-    20.times {|n|
-      x[n].join
-      mad_i = make_system(prevalence_base+n.to_s) { F.new }
-      assert_equal(n, mad_i.system.z, "restored mad[#{n}].z")
-      mad_i.close
-    }
-  end
-end
-
 # tests restoring when objects get unreferenced and GC'd during restore
-class FinalisedTest < AutoTest
+class FinalisedTest < Test::Unit::TestCase
+  include AutoTest
+
   def test_main
     mad = create_new_system(B, prevalence_base, 0)
     mad.system.yy = Array.new(200000)  # make ruby run GC
@@ -504,7 +359,9 @@ class FinalisedTest < AutoTest
   end
 end
 
-class DontInterceptTest < AutoTest
+class DontInterceptTest < Test::Unit::TestCase
+  include AutoTest
+
   def test_main
     mad = create_new_system(K, prevalence_base)
     mad.system.seven
@@ -528,32 +385,4 @@ class DontInterceptTest < AutoTest
     assert_equal(-2, mad_3.system.k, "Snapshot and commands")
     mad_3.close
   end
-end
-
-def add_automatic_tests(suite)
-  suite << BasicTest.suite
-  suite << ObjectOutsideTest.suite
-  suite << BlockGivenTest.suite
-  suite << NonPersistedObjectTest.suite
-  suite << RefInExternalObjTest.suite
-  suite << InvalidMethodTest.suite
-  suite << CircularReferenceTest.suite
-  suite << BasicThreadSafetyTest.suite
-  suite << FinalisedTest.suite
-  suite << DontInterceptTest.suite
-  suite << AutomaticCustomMarshallerTest.suite
-end
-
-def add_slow_automatic_tests(suite)
-  suite << ThreadConfidenceTest.suite
-  suite << ThreadedStartupTest.suite
-end
-
-if __FILE__ == $0
-  slowsuite = Test::Unit::TestSuite.new("AutomaticMadeleine (including slow tests)")
-  add_automatic_tests(slowsuite)
-  add_slow_automatic_tests(slowsuite)
-
-  require 'test/unit/ui/console/testrunner'
-  Test::Unit::UI::Console::TestRunner.run(slowsuite)
 end

@@ -7,7 +7,6 @@ $LOAD_PATH.unshift("test")
 require 'madeleine'
 require 'test/unit'
 
-
 class Append
   def initialize(value)
     @value = value
@@ -17,7 +16,6 @@ class Append
     system << @value
   end
 end
-
 
 module TestUtils
   def delete_directory(directory_name)
@@ -32,6 +30,13 @@ module TestUtils
   end
 end
 
+require 'test_command_log'
+require 'test_executer'
+require 'test_clocked'
+require 'test_automatic'
+require 'test_persistence'
+require 'test_platforms'
+require 'test_zmarshal'
 
 class SnapshotMadeleineTest < Test::Unit::TestCase
   include TestUtils
@@ -219,6 +224,18 @@ class TimeOptimizingLoggerTest < Test::Unit::TestCase
     delete_directory("some_directory")
   end
 
+  class Addition
+    attr_reader :value
+
+    def initialize(value)
+      @value = value
+    end
+
+    def execute(system)
+      system.add(@value)
+    end
+  end
+
   def test_optimizing_ticks
     assert_equal(0, @log.size)
     @target.store(Madeleine::Clock::Tick.new(Time.at(3)))
@@ -288,33 +305,3 @@ class SharedLockQueryTest < Test::Unit::TestCase
     assert($was_shared)
   end
 end
-
-suite = Test::Unit::TestSuite.new("Madeleine")
-
-suite << SnapshotMadeleineTest.suite
-suite << NumberedFileTest.suite
-require 'test_command_log'
-suite << CommandLogTest.suite
-suite << LoggerTest.suite
-suite << CommandVerificationTest.suite
-suite << CustomMarshallerTest.suite
-suite << ErrorHandlingTest.suite
-suite << QueryTest.suite
-suite << TimeOptimizingLoggerTest.suite
-suite << SharedLockQueryTest.suite
-require 'test_executer'
-suite << ExecuterTest.suite
-
-require 'test_clocked'
-add_clocked_tests(suite)
-require 'test_automatic'
-add_automatic_tests(suite)
-require 'test_persistence'
-add_persistence_tests(suite)
-require 'test_platforms'
-add_platforms_tests(suite)
-require 'test_zmarshal'
-add_zmarshal_tests(suite)
-
-require 'test/unit/ui/console/testrunner'
-Test::Unit::UI::Console::TestRunner.run(suite)
