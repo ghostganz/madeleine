@@ -146,7 +146,6 @@ module Madeleine
 #
     class Automatic_marshaller
       def Automatic_marshaller.load(io)
-#        restored_obj = Thread.current[:system].marshaller.load(arg)
         restored_obj = Deserialize.load(io, Thread.current[:system].marshaller)
         ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (o.sysid == restored_obj.sysid)}
         restored_obj
@@ -193,6 +192,8 @@ module Madeleine
 # Custom marshalling - this adds the internal id (myid) and the system id to a marshall 
 # of the object we are the proxy for.
 # We take care to not marshal the same object twice, so circular references will work.
+# We ignore Thread.current[:system].marshaller here - this is only called by Marshal, and
+# marshal is always used for Command objects
 #
       def _dump(depth)
         if (Thread.current[:snapshot_memory])
@@ -200,14 +201,14 @@ module Madeleine
             [@myid.to_s, @sysid].pack("A8A30")
           else
             Thread.current[:snapshot_memory][self] = true
-           [@myid.to_s, @sysid].pack("A8A30") + Thread.current[:system].marshaller.dump(@thing, depth)
+           [@myid.to_s, @sysid].pack("A8A30") + Marshal.dump(@thing, depth)
           end
         else
           [@myid.to_s, @sysid].pack("A8A30")
         end
       end
 #
-# Custom marshalling - restore a Prox object.
+# Custom marshalling for Marshal - restore a Prox object.
 #
       def Prox._load(str)
         x = Prox.new(nil)
@@ -215,7 +216,7 @@ module Madeleine
         x.myid = a[0].to_i
         x.sysid = a[1]
         x = Thread.current[:system].restore(x)
-        x.thing = Thread.current[:system].marshaller.load(a[2]) if (a[2] > "")
+        x.thing = Marshal.load(a[2]) if (a[2] > "")
         x
       end
 
@@ -232,7 +233,7 @@ module Madeleine
 # marshalling will work correctly.
 #
     class AutomaticSnapshotMadeleine
-      attr_accessor :sysid
+      attr_accessor :sysid, :marshaller
       attr_reader :list, :marshaller
 
       def initialize(directory_name, marshaller=Marshal, persister=SnapshotMadeleine, &new_system_block)
