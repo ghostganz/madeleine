@@ -11,11 +11,12 @@
 
 <h2>Madeleine::SnapshotMadeleine</h2>
 
-<div class="classMethod">new(new_system, directory_name)</div>
+<div class="classMethod">new(new_system, directory_name [, snapshot_marshaller])</div>
 
 <ul>
   <li><code>new_system</code> - New system to use if no stored system was found.
   <li><code>directory_name</code> - Storage directory to use. Will be created if needed.
+  <li><code>snapshot_marshaller</code> - Marshaller to use for system snapshots. (Optional)
 </ul>
 
 <p>Creates a new Madeleine instance. If there is a snapshot available
@@ -23,14 +24,23 @@ then the system will be created from that, otherwise
 <code>new_system</code> will be used. The state of the system will
 then be restored from the command logs.
 
+<p>You can provide your own snapshot marshaller, for instance using
+YAML or SOAP, instead of Ruby's built-in marshaller. The
+<code>snapshot_marshaller</code> must respond to
+<code>load(stream)</code> and <code>dump(object, stream)</code>. You
+must always use the same marshaller for a system (unless you convert
+your snapshot files).
+
 <div class="instanceMethod">execute_command(aCommand)</div>
 
 <ul>
   <li><code>aCommand</code> - The command to execute on the system.
 </ul>
 
-<p>Commands must have a method <code>execute(aSystem)</code>,
-otherwise an error, <code>Madeleine::InvalidCommandException</code>, will be raised.
+<p>Commands must have a method <code>execute(aSystem)</code>.
+Otherwise an error, <code>Madeleine::InvalidCommandException</code>, will be raised.
+
+<p>The return value from the command's <code>execute</code> method is returned.
 
 <div class="instanceMethod">take_snapshot()</div>
 
@@ -52,9 +62,43 @@ Thread.new(madeleine) {|madeleine|
 }
 </pre>
 
+<h2>Madeleine::Clock::ClockedSnapshotMadeleine</h2>
+
+<p><b>Extends: <code>Madeleine::SnapshotMadeleine</code></b>
+
+<p>Optimizes the logging of commands from a <code>TimeActor</code>.
+
+
+<h2>Madeleine::Clock::ClockedSystem</h2>
+
+<p>Let your system extend this module if you need to access the
+machine time. Used together with a <code>TimeActor</code> that keeps
+the clock current.
+
+<p>...
+
+<h2>Madeleine::Clock::TimeActor</h2>
+
+<p>Sends clock ticks to update a ClockedSystem, so that time can be
+dealt with in a deterministic way.
+
+<div class="classMethod">launch(madeleine [, delay])</div>
+
+<ul>
+  <li><code>madeleine</code> - The Madeleine instance to work on
+  <li><code>delay</code> - Delay between ticks in seconds (Optional, defaults to
+  0.1)
+</ul>
+
+<p>A TimeActor is returned.
+
+<div class="instanceMethod">destroy()</div>
+
+<p>Stops the TimeActor.
+
 <hr>
 
-<tt>$Id: api.html,v 1.3 2003/03/23 14:05:25 ndrs Exp $</tt>
+<tt>$Id: api.html,v 1.4 2003/04/01 20:41:36 ndrs Exp $</tt>
 
 </body>
 </html>
