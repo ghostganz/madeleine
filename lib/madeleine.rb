@@ -20,7 +20,6 @@ module Madeleine
       @marshaller = marshaller
       @in_recovery = false
       @closed = false
-      # @lock = Madeleine::ReadWriteLock::RWLock.new
       @lock = Sync.new
       ensure_directory_exists
       recover_system(new_system_block)
