@@ -8,16 +8,16 @@ require 'thread'
 
 module Madeleine
 
-  MADELEINE_VERSION = "0.2"
+  MADELEINE_VERSION = "0.3"
 
   class SnapshotMadeleine
     attr_reader :system
 
-    def initialize(new_system, directory_name, marshaller=Marshal)
+    def initialize(directory_name, marshaller=Marshal, &new_system_block)
       @directory_name = directory_name
       @marshaller = marshaller
       ensure_directory_exists
-      recover_system(new_system)
+      recover_system(new_system_block)
       @logger = Logger.new(directory_name, log_factory)
       @lock = Mutex.new
     end
@@ -48,7 +48,7 @@ module Madeleine
       command.execute(system)
     end
 
-    def recover_system(new_system)
+    def recover_system(new_system_block)
       id = Snapshot.highest_id(@directory_name)
       if id > 0
         snapshot_file = SnapshotFile.new(@directory_name, id).name
@@ -56,7 +56,7 @@ module Madeleine
           @system = @marshaller.load(snapshot)
         }
       else
-        @system = new_system
+        @system = new_system_block.call
       end
 
       CommandLog.log_file_names(@directory_name).each {|file_name|

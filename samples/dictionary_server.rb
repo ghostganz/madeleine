@@ -69,9 +69,7 @@ class DictionaryServer
 end
 
 
-system = Dictionary.new
-madeleine = Madeleine::SnapshotMadeleine.new(system,
-                                             "dictionary-base")
+madeleine = Madeleine::SnapshotMadeleine.new("dictionary-base") { Dictionary.new }
 
 Thread.new(madeleine) {
   puts "Taking snapshot every 30 seconds."

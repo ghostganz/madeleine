@@ -90,7 +90,7 @@ class PersistenceTest < Test::Unit::TestCase
   end
 
   def create_madeleine
-    Madeleine::SnapshotMadeleine.new(AddingSystem.new, prevalence_base())
+    Madeleine::SnapshotMadeleine.new(prevalence_base()) { AddingSystem.new }
   end
 
   def snapshot
@@ -173,8 +173,9 @@ end
 class ClockedPersistenceTest < PersistenceTest
 
   def create_madeleine
-    Madeleine::Clock::ClockedSnapshotMadeleine.new(ClockedAddingSystem.new,
-                                                   prevalence_base())
+    Madeleine::Clock::ClockedSnapshotMadeleine.new(prevalence_base()) {
+      ClockedAddingSystem.new
+    }
   end
 
   def prevalence_base
@@ -372,7 +373,7 @@ class CommandVerificationTest < Test::Unit::TestCase
 
   def test_broken_command
     system = :hello
-    target = Madeleine::SnapshotMadeleine.new(system, "foo")
+    target = Madeleine::SnapshotMadeleine.new("foo") { system }
     assert_raises(Madeleine::InvalidCommandException) do
       target.execute_command(:not_a_command)
     end
@@ -399,12 +400,12 @@ class CustomMarshallerTest < Test::Unit::TestCase
     @log = ""
     system = "hello world"
     marshaller = self
-    target = Madeleine::SnapshotMadeleine.new(system, prevalence_base, marshaller)
+    target = Madeleine::SnapshotMadeleine.new(prevalence_base, marshaller) { system }
     target.take_snapshot
     assert_equal("dump ", @log)
     target = nil
 
-    Madeleine::SnapshotMadeleine.new(system, prevalence_base, marshaller)
+    Madeleine::SnapshotMadeleine.new(prevalence_base, marshaller) { system }
     assert_equal("dump load ", @log)
   end
 

@@ -9,8 +9,8 @@ module Madeleine
 
     class ClockedSnapshotMadeleine < SnapshotMadeleine
 
-      def initialize(new_system, directory_name)
-        super(new_system, directory_name)
+      def initialize(directory_name, &new_system_block)
+        super(directory_name, &new_system_block)
       end
 
       def log_factory

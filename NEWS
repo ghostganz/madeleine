@@ -1,5 +1,7 @@
 
 
+    * Works in $SAFE = 1
+
 Madeleine 0.2:
 
     * Supports custom marshalling implementations.
