@@ -5,7 +5,7 @@ module Madeleine
 
 # Automatic commands for Madeleine
 #
-# Author::    Stephen Sykes <ruby@stephensykes.com>
+# Author::    Stephen Sykes <sds@stephensykes.com>
 # Copyright:: Copyright (C) 2003-2004
 # Version::   0.5
 #
@@ -70,10 +70,6 @@ module Madeleine
 # keeping track of which methods are read only
 #
       def self.included(klass)
-        klass.instance_eval do
-          @auto_read_only_flag = false
-          @read_only_methods = []
-        end
         class <<klass #:nodoc:
           alias_method :_old_new, :new
 
@@ -84,7 +80,15 @@ module Madeleine
 # Called when a method added - remember symbol if read only 
 #
           def method_added(symbol)
-            self.instance_eval {@read_only_methods << symbol if @auto_read_only_flag}
+            self.instance_eval {
+              @read_only_methods ||= []
+              @auto_read_only_flag ||= false
+              @read_only_methods << symbol if @auto_read_only_flag
+              c = self
+              while (c = c.superclass)
+                @read_only_methods |= c.instance_eval {@read_only_methods} if c.instance_eval {instance_variables.include? "@read_only_methods"}
+              end
+            }
           end
 #
 # Set the read only flag, or add read only methods
@@ -93,7 +97,7 @@ module Madeleine
             if (list == [])
               self.instance_eval {@auto_read_only_flag = true}
             else
-              list.each {|s| self.instance_eval {@read_only_methods << s}}
+              list.each {|s| self.instance_eval {@read_only_methods ||= []; @read_only_methods << s}}
             end
           end
 #
@@ -103,7 +107,7 @@ module Madeleine
             if (list == [])
               self.instance_eval {@auto_read_only_flag = false}
             else
-              list.each {|s| self.instance_eval {@read_only_methods.delete(s)}}
+              list.each {|s| self.instance_eval {@read_only_methods ||= []; @read_only_methods.delete(s)}}
             end
           end
 
@@ -137,7 +141,11 @@ module Madeleine
 # Called by madeleine when the command is done either first time, or when restoring the log
 #
       def execute(system)
-        @target.send(@symbol, *@args)
+        if (@args.size == 1)  # because can't use (*args) syntax for attribute setters - who knows why
+          eval "@target.#{@symbol.to_s} @args[0]"
+        else
+          eval "@target.#{@symbol.to_s}(*@args)"
+        end
       end
     end
 #
@@ -181,7 +189,7 @@ module Madeleine
 #      print "Sending #{symbol} to #{thing.to_s}, myid=#{@myid}, sysid=#{@sysid}\n"
         raise NoMethodError, "Undefined method" unless thing.respond_to?(symbol)
         if (cursys)
-          thing.send(symbol, *args, &block)
+          thing.send(symbol, *args, &block)  # safe to use send after respond_to check
         else
           raise "Cannot make command with block" if block_given?
           begin
@@ -304,6 +312,7 @@ module Madeleine
 # Pass on any other calls to the persister
 #
       def method_missing(symbol, *args, &block)  #:nodoc:
+        raise NoMethodError, "Undefined method" unless @persister.respond_to?(symbol)
         @persister.send(symbol, *args, &block)
       end
     end
