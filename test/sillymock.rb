@@ -1,9 +1,6 @@
 #
 # Copyright (c) Anders Bengtsson 2004
 #
-# SillyMock is a simple tool for creating Mock objects
-# for unit testing with Test::Unit.
-#
 
 require 'test/unit'
 
@@ -66,9 +63,13 @@ class Mock
     @expected = []
   end
 
-  def expects(method, args=nil)
-    expectation = Expectation.new(method, args)
+  def expects(method_name, args=nil)
+    expectation = Expectation.new(method_name, args)
     @expected << expectation
+
+    unless methods.include?(method_name.to_s)
+      instance_eval("def self.#{method_name}(*args); method_missing(:#{method_name}, *args); end")
+    end
     expectation
   end
 
@@ -93,5 +94,9 @@ class Mock
     else
       raise "wrong arguments"
     end
+  end
+
+  def respond_to?(name)
+    !! @expected.detect {|e| e.matches_method?(name) }
   end
 end

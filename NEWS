@@ -1,4 +1,6 @@
 
+    * ZMarshal changed to work around Zlib bug.
+
 Madeleine 0.7 (July 23, 2004):
 
     * Broken clock unit test on win32 fixed.

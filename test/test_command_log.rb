@@ -73,23 +73,21 @@ class CommandLogTest < Test::Unit::TestCase
   end
 
   def test_writing_command
-    mock_file = MockFile.new
+    command = ExampleCommand.new(1234)
+    file = Mock.new
+    file.expects(:write, [Marshal.dump(command)])
+    file.expects(:flush)
+    file.expects(:fsync)
+
     file_service = Mock.new
     file_service.expects(:exist?, ["some/path"]).return_value(true)
     file_service.expects(:dir_entries, ["some/path"]).return_value([])
-    file_service.expects(:open).return_value(mock_file)
-   
-    command = ExampleCommand.new(1234)
+    file_service.expects(:open).return_value(file)
 
     target = Madeleine::CommandLog.new("some/path", file_service)
     target.store(command)
 
-    assert(mock_file.was_fsynced)
-
-    mock_file.rewind
-    assert_equal(Marshal.dump(command), mock_file.read)
-
+    file.verify
     file_service.verify
   end
 end
-
