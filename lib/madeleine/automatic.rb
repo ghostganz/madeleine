@@ -1,18 +1,25 @@
+require 'yaml'
+
 module Madeleine
 
 # Automatic commands for Madeleine
 #
 # Author::    Stephen Sykes <ruby@stephensykes.com>
 # Copyright:: Copyright (C) 2003-2004
-# Version::   0.3
+# Version::   0.4
 #
 # This module provides a way of automatically generating command objects for madeleine to
 # store.  It works by making a proxy object for all objects of any classes in which it is included.
 # Method calls to these objects are intercepted, and stored as a command before being
-# passed on to the real receiver.
+# passed on to the real receiver.  The command objects remember which object the command was
+# destined for by using a pair of internal ids that are contained in each of the proxy objects.
 #
 # There is also a mechanism for specifying which methods not to intercept calls to by using
 # automatic_read_only, and its opposite automatic_read_write.
+#
+# Should you require it, the snapshots can be stored as yaml, just pass YAML as the second
+# argument to AutomaticSnapshotMadeleine.new.  The system will read either Marshal or YAML at
+# startup.
 #
 # This module is designed to work correctly in the case there are multiple madeleine systems in use by
 # a single program, and is also safe to use with threads.
@@ -138,8 +145,9 @@ module Madeleine
 # add new objects to the list in AutomaticSnapshotMadeleine
 #
     class Automatic_marshaller
-      def Automatic_marshaller.load(arg)
-        restored_obj = Thread.current[:system].marshaller.load(arg)
+      def Automatic_marshaller.load(io)
+#        restored_obj = Thread.current[:system].marshaller.load(arg)
+        restored_obj = Deserialize.load(io, Thread.current[:system].marshaller)
         ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (o.sysid == restored_obj.sysid)}
         restored_obj
       end
@@ -192,7 +200,7 @@ module Madeleine
             [@myid.to_s, @sysid].pack("A8A30")
           else
             Thread.current[:snapshot_memory][self] = true
-            [@myid.to_s, @sysid].pack("A8A30") + Thread.current[:system].marshaller.dump(@thing, depth)
+           [@myid.to_s, @sysid].pack("A8A30") + Thread.current[:system].marshaller.dump(@thing, depth)
           end
         else
           [@myid.to_s, @sysid].pack("A8A30")
@@ -253,7 +261,7 @@ module Madeleine
 # If the object already exists in the system then the existing object must be used.
 #
       def restore(proxo)  
-        if (@list[proxo.myid] && proxo.sysid == myid2ref(proxo.myid).sysid) 
+        if (@list[proxo.myid])# && proxo.sysid == myid2ref(proxo.myid).sysid) 
           proxo = myid2ref(proxo.myid)
         else
           @list[proxo.myid] = proxo.object_id
@@ -312,6 +320,33 @@ module Madeleine
       def method_missing(symbol, *args, &block)
         @persister.send(symbol, *args, &block)
       end
+    end
+
+
+    class Deserialize
+#
+# Detect marshal format, and return deserialized object using the right marshaller
+# If detection didn't work, use the marshaller given in the optional 2nd argument
+#
+      def Deserialize.load(io, marshaller=Marshal)
+        c = io.getc
+        c1 = io.getc
+        io.rewind
+        if (c == Marshal::MAJOR_VERSION && c1 <= Marshal::MINOR_VERSION)
+          Marshal.load(io)
+        else
+          while (s = io.gets)
+            break if (s !~ /^\s*#/ && s !~ /^\s*$/) # ignore blank and comment lines
+          end
+          io.rewind
+          if (s && s =~ /^\s*---/) # "---" is the yaml header
+            YAML.load(io)
+          else
+            marshaller.load(io)
+          end
+        end
+      end
+
     end
 
   end
