@@ -231,8 +231,13 @@ class TimeTest < Test::Unit::TestCase
     command.execute(mock_system)
   end
 
-  # Self-shunt
-  def forward_clock_to(time)
+  # Self-shunt (system)
+  def clock
+    self
+  end
+
+  # Self-shunt (clock)
+  def forward_to(time)
     if time <= @last_time
       raise "non-monotonous time"
     end
@@ -244,13 +249,13 @@ class TimeTest < Test::Unit::TestCase
     target = Object.new
     target.extend(Madeleine::Clock::ClockedSystem)
     t1 = Time.at(10000)
-    target.forward_clock_to(t1)
-    assert_equal(t1, target.time)
+    target.clock.forward_to(t1)
+    assert_equal(t1, target.clock.time)
     t2 = Time.at(20000)
-    target.forward_clock_to(t2)
-    assert_equal(t2, target.time)
+    target.clock.forward_to(t2)
+    assert_equal(t2, target.clock.time)
     reloaded_target = Marshal.load(Marshal.dump(target))
-    assert_equal(t2, reloaded_target.time)
+    assert_equal(t2, reloaded_target.clock.time)
   end
 end
 
@@ -306,17 +311,21 @@ class TimeOptimizingCommandLogTest < CommandLogTest
   end
 
   def value_of_tick(tick)
-    system = Object.new
-    def system.forward_clock_to(time)
+    @clock = Object.new
+    def @clock.forward_to(time)
       @value = time.to_i
     end
-    def system.value
+    def @clock.value
       @value
     end
-    tick.execute(system)
-    system.value
+    tick.execute(self)
+    @clock.value
   end
 
+  # Self-shunt
+  def clock
+    @clock
+  end
 end
 
 
@@ -388,7 +397,6 @@ class CustomMarshallerTest < Test::Unit::TestCase
 
     Madeleine::SnapshotMadeleine.new(system, prevalence_base, marshaller)
     assert_equal("dump load ", @log)
-
   end
 
   def load(io)

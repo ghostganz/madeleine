@@ -20,14 +20,6 @@ module Madeleine
 
     module ClockedSystem
 
-      def time
-        clock.time
-      end
-
-      def forward_clock_to(newTime)
-        clock.forward_to(newTime)
-      end
-
       def clock
         unless defined? @clock
           @clock = Clock.new
@@ -68,6 +60,21 @@ module Madeleine
       end
     end
 
+    class Clock
+      attr_reader :time
+
+      def initialize
+        @time = Time.at(0)
+      end
+
+      def forward_to(newTime)
+        if newTime < @time
+          raise "Can't decrease clock's time."
+        end
+        @time = newTime
+      end
+    end
+
     #
     # Internal classes below
     #
@@ -98,21 +105,6 @@ module Madeleine
       end
     end
 
-    class Clock
-      attr_reader :time
-
-      def initialize
-        @time = Time.at(0)
-      end
-
-      def forward_to(newTime)
-        if newTime < @time
-          raise "Can't decrease clock's time."
-        end
-        @time = newTime
-      end
-    end
-
     class Tick
 
       def initialize(time)
@@ -120,9 +112,8 @@ module Madeleine
       end
 
       def execute(system)
-        system.forward_clock_to(@time)
+        system.clock.forward_to(@time)
       end
     end
-
   end
 end
