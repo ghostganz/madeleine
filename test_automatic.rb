@@ -14,7 +14,10 @@ require 'test/unit'
 
 class A
   include Madeleine::Automatic::Interceptor
-  attr_accessor :z
+  attr_accessor :z,:k
+  def initialize
+    @k=1
+  end
 end
 
 class B
@@ -123,17 +126,24 @@ end
 class BasicTest < AutoTest
   def test_main
     mad_a = create_new_system(A, prevalence_base)
-    mad_a.system.z = 0
-    mad_a.system.z += 1
-    assert_equal(1, mad_a.system.z)
-    mad_a.system.z -= 10
-    assert_equal(-9, mad_a.system.z, "mad_a.z")
     mad_a.close
+    mad_a0 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { A.new }
+    assert_equal(1, mad_a0.system.k, "No commands or snapshot")
+    mad_a0.system.z = 0
+    mad_a0.system.z += 1
+    assert_equal(1, mad_a0.system.z)
+    mad_a0.system.z -= 10
+    assert_equal(-9, mad_a0.system.z, "Object changes")
+    mad_a0.close
     mad_a2 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { A.new }
-    assert_equal(-9, mad_a2.system.z, "mad_a.z")
+    assert_equal(-9, mad_a2.system.z, "Commands but no snapshot")
     mad_a2.take_snapshot
     mad_a3 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { A.new }
-    assert_equal(-9, mad_a3.system.z, "mad_a.z")
+    assert_equal(-9, mad_a3.system.z, "Snapshot but no commands")
+    mad_a3.system.z -= 6
+    mad_a3.system.z -= 3
+    mad_a4 = Madeleine::Automatic::AutomaticSnapshotMadeleine.new(prevalence_base) { A.new }
+    assert_equal(-18, mad_a4.system.z, "Snapshot and commands")
   end
 
   def test_main_in_safe_level_one
@@ -251,7 +261,7 @@ class BasicThreadSafetyTest < AutoTest
                }
            }
     }
-    sleep(1)
+    sleep(0.1)
     mad_d.take_snapshot
     mad_e2.take_snapshot
     25.times {|n|

@@ -22,6 +22,7 @@
 # mad.system.some_method(paramA, ...)
 #
 # mad.take_snapshot
+#
 
 module Madeleine
   module Automatic
@@ -135,8 +136,8 @@ module Madeleine
     end
 
 #
-# The AutomaticSnapshotMadeleine class extends SnapshotMadeleine to provide the additional automatic command
-# functionality.
+# The AutomaticSnapshotMadeleine class contains an instance of the persister
+# (default is SnapshotMadeleine) and provides additional automatic functionality.
 #
 # The class keeps a record of all the systems that currently exist.
 # Each instance of the class keeps a record of Prox objects in that system by internal id (myid).
@@ -144,23 +145,24 @@ module Madeleine
 # We also add functionality to take_snapshot in order to set things up so that the custom Prox object 
 # marshalling will work correctly.
 #
-    class AutomaticSnapshotMadeleine < SnapshotMadeleine
+    class AutomaticSnapshotMadeleine
       attr_accessor :sysid
       attr_reader :list, :marshaller
 
-      def initialize(directory_name, marshaller=nil, &new_system_block)
+      def initialize(directory_name, marshaller=Marshal, persister=SnapshotMadeleine, &new_system_block)
         @sysid ||= Time.now.to_f.to_s + Thread.current.object_id.to_s # Gererate a new sysid
-        @myid_count = 0                                         # This sysid will be used only if new object is 
-        @list = {}                                             # taken by madeleine
-        Thread.current[:system] = self   # also ensures that no commands are generated during restore
-        AutomaticSnapshotMadeleine.register_sysid(@sysid)   # this sysid may be overridden, but need to record it anyway
+        @myid_count = 0                                               # This sysid will be used only if new
+        @list = {}                                                    # object is taken by madeleine
+        Thread.current[:system] = self # during system startup system should not create commands
+        AutomaticSnapshotMadeleine.register_sysid(@sysid) # this sysid may be overridden
+        @marshaller = marshaller # until attrb
         begin
           if marshaller.nil?
-            super(directory_name, &new_system_block)
+            @persister = persister.new(directory_name, &new_system_block)
           else
-            super(directory_name, marshaller, &new_system_block)
+            @persister = persister.new(directory_name, marshaller, &new_system_block)
           end
-          AutomaticSnapshotMadeleine.register_sysid(@sysid)  # needed if there were no commands
+          AutomaticSnapshotMadeleine.register_sysid(@sysid) # needed if there were no commands
         ensure
           Thread.current[:system] = false
         end
@@ -177,7 +179,6 @@ module Madeleine
 # If the object already exists in the system then the existing object must be used.
 #
       def restore(proxo)  
-        # if we already have this system's object, use that
         if (@list[proxo.myid] && proxo.sysid == myid2ref(proxo.myid).sysid) 
           proxo = myid2ref(proxo.myid)
         else
@@ -201,7 +202,7 @@ module Madeleine
         begin
           Thread.current[:system] = self
           Thread.current[:snapshot_memory] = {}
-          super
+          @persister.take_snapshot
         ensure
           Thread.current[:snapshot_memory] = nil
           Thread.current[:system] = false
@@ -226,7 +227,12 @@ module Madeleine
       def AutomaticSnapshotMadeleine.systems
         @@systems
       end
-
+#
+# Pass on any other calls to the persister
+#
+      def method_missing(symbol, *args, &block)
+        @persister.send(symbol, *args, &block)
+      end
     end
 
   end
