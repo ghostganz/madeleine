@@ -22,9 +22,6 @@ module Madeleine
 
   class SnapshotMadeleine
 
-    # The prevalent system
-    attr_reader :system
-
     # Creates a new SnapshotMadeleine instance. If there is a snapshot available
     # then the system will be created from that, otherwise
     # <tt>new_system</tt> will be used. The state of the system will
@@ -34,20 +31,48 @@ module Madeleine
     # YAML or SOAP, instead of Ruby's built-in marshaller. The
     # <tt>snapshot_marshaller</tt> must respond to
     # <tt>load(stream)</tt> and <tt>dump(object, stream)</tt>. You
-    # must always use the same marshaller for a system (unless you convert
-    # your snapshot files manually).
+    # must use the same marshaller every time for a system.
     #
     # * <tt>directory_name</tt> - Storage directory to use. Will be created if needed.
     # * <tt>snapshot_marshaller</tt> - Marshaller to use for system snapshots. (Optional)
     # * <tt>new_system_block</tt> - Block to create a new system (if no stored system was found).
-    def initialize(directory_name, snapshot_marshaller=Marshal, &new_system_block)
-      @directory_name = directory_name
-      @marshaller = snapshot_marshaller
-      @in_recovery = false
+    def self.new(directory_name, snapshot_marshaller=Marshal, &new_system_block)
+      log_factory = DefaultLogFactory.new
+      logger = Logger.new(directory_name,
+                          log_factory)
+      recoverer = Recoverer.new(directory_name,
+                                snapshot_marshaller)
+      snapshotter = Snapshotter.new(directory_name,
+                                    snapshot_marshaller)
+      lock = DefaultLock.new
+      
+      DefaultSnapshotMadeleine.new(directory_name,
+                                   logger,
+                                   recoverer,
+                                   snapshotter,
+                                   lock,
+                                   new_system_block)
+    end
+  end
+
+  class DefaultSnapshotMadeleine
+
+    # The prevalent system
+    attr_reader :system
+
+    def initialize(directory_name, logger, recoverer, snapshotter, lock, new_system_block)
+      @logger = logger
+      @snapshotter = snapshotter
+      @lock = lock
+
       @closed = false
-      @lock = create_lock
-      recover_system(new_system_block)
-      @logger = create_logger(directory_name, log_factory)
+      @system = recoverer.recover_snapshot(new_system_block)
+      @executer = Executer.new(@system)
+
+      log_recoverer = LogRecoverer.new(@executer, directory_name)
+      @executer.recovery {
+        log_recoverer.recover_logs
+      }
     end
 
     # Execute a command on the prevalent system.
@@ -61,10 +86,10 @@ module Madeleine
     # * <tt>command</tt> - The command to execute on the system.
     def execute_command(command)
       verify_command_sane(command)
-      synchronize {
+      @lock.synchronize {
         raise "closed" if @closed
         @logger.store(command)
-        execute_without_storing(command)
+        @executer.execute(command)
       }
     end
 
@@ -76,8 +101,8 @@ module Madeleine
     #
     # * <tt>query</tt> - The query command to execute
     def execute_query(query)
-      synchronize_shared {
-        execute_without_storing(query)
+      @lock.synchronize_shared {
+        @executer.execute(query)
       }
     end
 
@@ -97,9 +122,9 @@ module Madeleine
     #    end
     #  }
     def take_snapshot
-      synchronize {
+      @lock.synchronize {
         @logger.close
-        Snapshot.new(@directory_name, system, @marshaller).take
+        @snapshotter.take(@system)
         @logger.reset
       }
     end
@@ -109,68 +134,13 @@ module Madeleine
     # The log file is closed and no new commands can be received
     # by this SnapshotMadeleine.
     def close
-      synchronize {
+      @lock.synchronize {
         @logger.close
         @closed = true
       }
     end
 
     private
-
-    def synchronize(&block)
-      @lock.synchronize(&block)
-    end
-
-    def synchronize_shared(&block)
-      @lock.synchronize(:SH, &block)
-    end
-
-    def create_lock
-      Sync.new
-    end
-
-    def create_logger(directory_name, log_factory)
-      Logger.new(directory_name, log_factory)
-    end
-
-    def log_factory
-      DefaultLogFactory.new
-    end
-
-    def execute_without_storing(command)
-      begin
-        command.execute(system)
-      rescue
-        raise unless @in_recovery
-      end
-    end
-
-    def recover_system(new_system_block)
-      @in_recovery = true
-      id = SnapshotFile.highest_id(@directory_name)
-      if id > 0
-        snapshot_file = SnapshotFile.new(@directory_name, id).name
-        open(snapshot_file) {|snapshot|
-          @system = @marshaller.load(snapshot)
-        }
-      else
-        @system = new_system_block.call
-      end
-
-      CommandLog.log_file_names(@directory_name).each {|file_name|
-        open(@directory_name + File::SEPARATOR + file_name) {|log|
-          recover_log(log)
-        }
-      }
-      @in_recovery = false
-    end
-
-    def recover_log(log)
-      while ! log.eof?
-        command = Marshal.load(log)
-        execute_without_storing(command)
-      end
-    end
 
     def verify_command_sane(command)
       if ! command.respond_to?(:execute)
@@ -187,6 +157,91 @@ module Madeleine
   #
 
   FILE_COUNTER_SIZE = 21
+
+  class DefaultLock #:nodoc:
+
+    def initialize
+      @lock = Sync.new
+    end
+
+    def synchronize(&block)
+      @lock.synchronize(&block)
+    end
+
+    def synchronize_shared(&block)
+      @lock.synchronize(:SH, &block)
+    end
+  end
+
+  class Executer #:nodoc:
+
+    def initialize(system)
+      @system = system
+      @in_recovery = false
+    end
+
+    def execute(command)
+      begin
+        command.execute(@system)
+      rescue
+        raise unless @in_recovery
+      end
+    end
+
+    def recovery
+      begin
+        @in_recovery = true
+        yield
+      ensure
+        @in_recovery = false
+      end
+    end
+  end
+
+  class Recoverer #:nodoc:
+
+    def initialize(directory_name, marshaller)
+      @directory_name, @marshaller = directory_name, marshaller
+    end
+
+    def recover_snapshot(new_system_block)
+      system = nil
+      id = SnapshotFile.highest_id(@directory_name)
+      if id > 0
+        snapshot_file = SnapshotFile.new(@directory_name, id).name
+        open(snapshot_file) {|snapshot|
+          system = @marshaller.load(snapshot)
+        }
+      else
+        system = new_system_block.call
+      end
+      system
+    end
+  end
+
+  class LogRecoverer #:nodoc:
+
+    def initialize(executer, directory_name)
+      @executer, @directory_name = executer, directory_name
+    end
+
+    def recover_logs
+      CommandLog.log_file_names(@directory_name).each {|file_name|
+        open(@directory_name + File::SEPARATOR + file_name) {|log|
+          recover_log(log)
+        }
+      }
+    end
+
+    private
+
+    def recover_log(log)
+      while ! log.eof?
+        command = Marshal.load(log)
+        @executer.execute(command)
+      end
+    end
+  end
 
   class NumberedFile #:nodoc:
 
@@ -335,17 +390,17 @@ module Madeleine
     end
   end
 
-  class Snapshot #:nodoc:
+  class Snapshotter #:nodoc:
 
-    def initialize(directory_name, system, marshaller)
-      @directory_name, @system, @marshaller = directory_name, system, marshaller
+    def initialize(directory_name, marshaller)
+      @directory_name, @marshaller = directory_name, marshaller
     end
 
-    def take
+    def take(system)
       numbered_file = SnapshotFile.next(@directory_name)
       name = numbered_file.name
       open(name + '.tmp', 'w') {|snapshot|
-        @marshaller.dump(@system, snapshot)
+        @marshaller.dump(system, snapshot)
         snapshot.flush
         snapshot.fsync
       }

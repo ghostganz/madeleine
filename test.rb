@@ -301,9 +301,12 @@ class SharedLockQueryTest < Test::Unit::TestCase
 
   def test_query
     madeleine = SnapshotMadeleine.new(prevalence_base) { "hello" }
+    lock = Object.new
+    madeleine.instance_eval { @lock = lock } # FIXME: The horror, the horror
+
     $shared = false
     $was_shared = false
-    def madeleine.synchronize_shared(&block)
+    def lock.synchronize_shared(&block)
       $shared = true
       block.call
       $shared = false
@@ -314,6 +317,51 @@ class SharedLockQueryTest < Test::Unit::TestCase
     end
     madeleine.execute_query(query)
     assert($was_shared)
+  end
+end
+
+
+class ExecuterTest < Test::Unit::TestCase
+
+  def test_executer
+    system = Object.new
+    command = self
+    executer = Madeleine::Executer.new(system)
+    @executed_with = nil
+    executer.execute(command)
+    assert_same(system, @executed_with)
+  end
+
+  # Self-shunt
+  def execute(system)
+    @executed_with = system
+  end
+
+  def test_execute_with_exception
+    system = Object.new
+    command = Object.new
+    def command.execute(system)
+      raise "hell"
+    end
+    executer = Madeleine::Executer.new(system)
+    assert_raises(RuntimeError) {
+      executer.execute(command)
+    }
+  end
+
+  def test_exception_in_recovery
+    system = Object.new
+    command = Object.new
+    def command.execute(system)
+      raise "hell"
+    end
+    executer = Madeleine::Executer.new(system)
+    executer.recovery {
+      executer.execute(command)
+    }
+    assert_raises(RuntimeError) {
+      executer.execute(command)
+    }
   end
 end
 
@@ -330,6 +378,7 @@ suite << ErrorHandlingTest.suite
 suite << QueryTest.suite
 suite << TimeOptimizingLoggerTest.suite
 suite << SharedLockQueryTest.suite
+suite << ExecuterTest.suite
 
 require 'test_clocked'
 add_clocked_tests(suite)

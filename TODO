@@ -1,4 +1,7 @@
 
+* Make sure the docs aren't broken after the re-design
+* Move recovery out of DefaultSnapshotMadeleine entirely
+
 * Ability to supply mock logger (to unit test without I/O)
 * ClockCommand
 * Integrate batched-writes in SnapshotMadeleine
