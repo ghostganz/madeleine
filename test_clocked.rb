@@ -1,3 +1,7 @@
+
+require 'madeleine/clock'
+
+
 class ClockedAddingSystem < AddingSystem
   include Madeleine::Clock::ClockedSystem
 end

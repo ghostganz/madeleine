@@ -256,7 +256,4 @@ module Madeleine
       File.rename(name + '.tmp', name)
     end
   end
-
 end
-
-require 'madeleine/clock'
