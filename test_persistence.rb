@@ -78,6 +78,7 @@ class PersistenceTest < Test::Unit::TestCase
     Dir.foreach(directory_name) {|file_name|
       next if file_name == '.'
       next if file_name == '..'
+      file_name.untaint
       assert(File.delete(directory_name + File::SEPARATOR + file_name) == 1,
                   "Unable to delete #{file_name}")
     }
@@ -157,6 +158,14 @@ class PersistenceTest < Test::Unit::TestCase
     add(2,139)
     crash_recover
     verify(139)
+  end
+
+  def test_main_in_safe_level_one
+    thread = Thread.new {
+      $SAFE = 1
+      test_main
+    }
+    thread.join
   end
 end
 

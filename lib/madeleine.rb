@@ -113,9 +113,11 @@ module Madeleine
   class CommandLog < NumberedFile
 
     def self.log_file_names(directory_name)
-      Dir.entries(directory_name).select {|name|
+      result = Dir.entries(directory_name).select {|name|
         name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command\_log$/
       }
+      result.each {|name| name.untaint }
+      result
     end
 
     def initialize(path)
