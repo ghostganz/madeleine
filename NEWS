@@ -1,4 +1,5 @@
 
+    * Automatic commands
     * Some classes exported to the default module
     * Clock support not loaded by default (require 'madeleine/clock')
     * Bug fix: Error handling when replaying logged commands.
