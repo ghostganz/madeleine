@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby -w
 #
-# Copyright(c) 2003 Stephen Sykes
-# Copyright(c) 2003 Anders Bengtsson
+# Copyright(c) 2003-2004 Stephen Sykes
+# Copyright(c) 2003-2004 Anders Bengtsson
 #
 
 $LOAD_PATH.unshift("lib")
@@ -83,6 +83,25 @@ class J
     yield 1
   end
 end
+
+class K
+  include Madeleine::Automatic::Interceptor
+  attr_accessor :k
+  def initialize
+    @k=1
+  end
+  def seven
+    @k=7
+  end
+  def fourteen
+    @k=14
+  end
+  automatic_read_only :fourteen
+  automatic_read_only
+  def twentyone
+    @k=21
+  end
+end  
 
 class AutoTest < Test::Unit::TestCase
 
@@ -417,6 +436,33 @@ class FinalisedTest < AutoTest
   end
 end
 
+class DontInterceptTest < AutoTest
+  def test_main
+    mad = create_new_system(K, prevalence_base)
+    mad.system.seven
+    assert_equal(7, mad.system.k, "Object changes")
+    mad.system.fourteen
+    assert_equal(14, mad.system.k, "Object changes, not intercepted")
+    mad.system.twentyone
+    assert_equal(21, mad.system.k, "Object changes, not intercepted")
+    mad.close
+    mad_1 = make_system(prevalence_base) { K.new }
+    assert_equal(7, mad_1.system.k, "Commands but no snapshot")
+    mad_1.take_snapshot
+    mad_1.close
+    mad_2 = make_system(prevalence_base) { K.new }
+    assert_equal(7, mad_2.system.k, "Snapshot but no commands")
+    mad_2.system.k -= 6
+    mad_2.system.k -= 3
+    mad_2.system.fourteen
+    mad_2.close
+    mad_3 = make_system(prevalence_base) { K.new }
+    assert_equal(-2, mad_3.system.k, "Snapshot and commands")
+    mad_3.close
+  end
+end
+
+
 def add_automatic_tests(suite)
   suite << BasicTest.suite
   suite << ObjectOutsideTest.suite
@@ -428,6 +474,7 @@ def add_automatic_tests(suite)
   suite << AutomaticCustomMarshallerTest.suite
   suite << BasicThreadSafetyTest.suite
   suite << FinalisedTest.suite
+  suite << DontInterceptTest.suite
 end
 
 def add_slow_automatic_tests(suite)

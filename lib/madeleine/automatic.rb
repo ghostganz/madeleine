@@ -4,23 +4,34 @@ module Madeleine
 #
 # Author::    Stephen Sykes <ruby@stephensykes.com>
 # Copyright:: Copyright (C) 2003-2004
-# Version::   0.2
+# Version::   0.3
 #
 # Usage:
 #
+#  require 'madeleine'
+#  require 'madeleine/automatic'
+#
 #  class A
 #    include Madeleine::Automatic::Interceptor
+#    attr_reader :foo
+#    automatic_read_only :foo
 #    def initialize(param1, ...)
-#    ...
+#      ...
+#    end
 #    def some_method(paramA, ...)
-#    ...
-#
+#      ...
+#    end
+#    automatic_read_only
+#    def bigfoo
+#      foo.upcase
+#    end
 #  end
 #
 #  mad = AutomaticSnapshotMadeleine.new("storage_directory") { A.new(param1, ...) }
 #
-#  mad.system.some_method(paramA, ...)
-#
+#  mad.system.some_method(paramA, ...) # logged as a command by madeleine
+#  print mad.foo                       # not logged
+#  print mad.bigfoo                    # not logged
 #  mad.take_snapshot
 #
 
@@ -30,18 +41,48 @@ module Madeleine
 # It will intercept method calls and make sure they are converted into commands that are logged by Madeleine.
 # It does this by returning a Prox object that is a proxy for the real object.
 #
+# It also handles automatic_read_only and automatic_read_write, allowing user specification of which methods
+# should be made into commands
+#
     module Interceptor
-      class <<self
-        def included(klass)
-          class <<klass #:nodoc:
-            alias_method :_old_new, :new
-            def new(*args, &block)
-              Prox.new(_old_new(*args, &block))
+      def self.included(klass)
+        class <<klass #:nodoc:
+          alias_method :_old_new, :new
+          @@auto_read_only_flag = false
+          @@read_only_methods = []
+
+          def new(*args, &block)
+            Prox.new(_old_new(*args, &block))
+          end
+
+          def method_added(symbol)
+            @@read_only_methods << symbol if @@auto_read_only_flag
+          end
+
+          def automatic_read_only(*list)
+            if (list == [])
+              @@auto_read_only_flag = true
+            else
+              list.each {|s| @@read_only_methods << s}
             end
           end
+
+          def automatic_read_write(*list)
+            if (list == [])
+              @@auto_read_only_flag = false
+            else
+              list.each {|s| @@read_only_methods.delete(s)}
+            end
+          end
+
         end
       end
+
+      def read_only_methods
+        @@read_only_methods
+      end
     end
+
 #
 # A Command object is automatically created for each method call to an object within the system that comes from without.
 # These objects are recorded in the log by Madeleine.
@@ -87,7 +128,7 @@ module Madeleine
       def method_missing(symbol, *args, &block)
 #      print "Sending #{symbol} to #{@thing.to_s}, myid=#{@myid}, sysid=#{@sysid}\n"
         raise NoMethodError, "Undefined method" unless @thing.respond_to?(symbol)
-        if (Thread.current[:system])
+        if (Thread.current[:system] || @thing.read_only_methods.include?(symbol))
           @thing.send(symbol, *args, &block)
         else
           raise "Cannot make command with block" if block_given?
