@@ -86,7 +86,6 @@ end
 class PersistenceTest < Test::Unit::TestCase
 
   def setup
-    @madeleines = []
     @madeleine = nil
   end
 
@@ -108,10 +107,7 @@ class PersistenceTest < Test::Unit::TestCase
   end
 
   def clear_prevalence_base
-    @madeleines.each {|madeleine|
-      madeleine.close
-    }
-    @madeleines.clear
+    @madeleine.close unless @madeleine.nil?
     delete_prevalence_files(prevalence_base())
   end
 
@@ -127,12 +123,12 @@ class PersistenceTest < Test::Unit::TestCase
   end
 
   def crash_recover
+    @madeleine.close unless @madeleine.nil? 
     @madeleine = create_madeleine()
-    @madeleines << @madeleine
   end
 
   def create_madeleine
-    SnapshotMadeleine.new(prevalence_base()) { AddingSystem.new }
+   SnapshotMadeleine.new(prevalence_base()) { AddingSystem.new }
   end
 
   def snapshot
@@ -356,7 +352,9 @@ class ErrorHandlingTest < Test::Unit::TestCase
     assert_raises(RuntimeError) do
       madeleine.execute_command(ErrorRaisingCommand.new)
     end
-    SnapshotMadeleine.new(prevalence_base) { "hello" }
+    madeleine.close
+    madeleine = SnapshotMadeleine.new(prevalence_base) { "hello" }
+    madeleine.close
   end
 end
 
