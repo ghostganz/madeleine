@@ -1,10 +1,7 @@
 
-* Overhaul module structure
 * More sample code
 * More documentation
 * Get it working on Windows
-* Transparent commands
 * DRb integration
 * Rollback
-* Do benchmarks
 * Handle broken logs?
