@@ -151,7 +151,7 @@ class NumberedFileTest < Test::Unit::TestCase
     target = Madeleine::NumberedFile.new(File::SEPARATOR + "foo", "bar", 321)
     assert_equal(File::SEPARATOR + "foo" + File::SEPARATOR +
                  "000000000000000000321.bar",
-                 target.to_s)
+                 target.name)
   end
 end
 

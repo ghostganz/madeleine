@@ -43,7 +43,7 @@ module Madeleine
     def recover_system(new_system)
       id = Snapshot.highest_id(@directory_name)
       if id > 0
-        snapshot_file = NumberedFile.new(@directory_name, "snapshot", id).to_s
+        snapshot_file = NumberedFile.new(@directory_name, "snapshot", id).name
         open(snapshot_file) {|snapshot|
           @system = Marshal.load(snapshot)
         }
@@ -78,21 +78,31 @@ module Madeleine
 
   FILE_COUNTER_SIZE = 21
 
-  class CommandLog
-    class << self
+  class NumberedFile
 
-      def log_file_names(directory_name)
-        Dir.entries(directory_name).select {|name|
-          name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command\_log$/
-        }
-      end
+    def initialize(path, name, id)
+      @path, @name, @id = path, name, id
+    end
 
-      def file_name(id)
-        name = ("0" * FILE_COUNTER_SIZE) + id.to_s
-        name = name[name.length - FILE_COUNTER_SIZE, name.length - 1]
-        name += ".command_log"
-      end
+    def name
+      result = @path
+      result += File::SEPARATOR
+      result += sprintf("%0#{FILE_COUNTER_SIZE}d", @id)
+      result += '.'
+      result += @name
+    end
+  end
 
+  class CommandLog < NumberedFile
+
+    def self.log_file_names(directory_name)
+      Dir.entries(directory_name).select {|name|
+        name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command\_log$/
+      }
+    end
+
+    def initialize(path, id)
+      super(path, "command_log", id)
     end
   end
 
@@ -143,20 +153,21 @@ module Madeleine
     end
 
     def open_new_log
-      name = NumberedFile.new(@directory_name, "command_log", highest_log + 1)
-      @log = open(name.to_s, 'w')
+      name = CommandLog.new(@directory_name, highest_log + 1)
+      @log = open(name.name, 'w')
+    end
+  end
+
+  class SnapshotFile < NumberedFile
+
+    def initialize(directory_name, id)
+      super(directory_name, "snapshot", id)
     end
   end
 
   class Snapshot
 
     class << self
-
-      def name(id)
-        name = ("0" * FILE_COUNTER_SIZE) + id.to_s
-        name = name[name.length - FILE_COUNTER_SIZE, name.length - 1]
-        name += ".snapshot"
-      end
 
       def highest_id(directory_name)
         highest = 0
@@ -177,32 +188,15 @@ module Madeleine
     end
 
     def take
-      name = @directory_name + File::SEPARATOR + snapshot_name()
+      numbered_file = SnapshotFile.new(@directory_name,
+                                       Snapshot.highest_id(@directory_name) + 1)
+      name = numbered_file.name
       open(name + '.tmp', 'w') {|snapshot|
         Marshal.dump(@system, snapshot)
+        snapshot.flush
+        snapshot.fsync
       }
       File.rename(name + '.tmp', name)
-    end
-
-    private
-
-    def snapshot_name
-      Snapshot.name(Snapshot.highest_id(@directory_name) + 1)
-    end
-  end
-
-  class NumberedFile
-
-    def initialize(path, name, id)
-      @path, @name, @id = path, name, id
-    end
-
-    def to_s
-      result = @path
-      result += File::SEPARATOR
-      result += sprintf("%0#{FILE_COUNTER_SIZE}d", @id)
-      result += '.'
-      result += @name
     end
   end
 
