@@ -1,4 +1,9 @@
 
+* Rolling snapshots, with age limit
+* Compressed snapshots
+* Full support for YAML snapshots
+* SOAP marshalling?
+
 * Move all default implementations into a "Default" module
 * Introduce an object representing a log directory
 * Move recovery out of DefaultSnapshotMadeleine entirely
