@@ -4,7 +4,7 @@
 # This is EXPERIMENTAL
 #
 # Copyright(c) Stephen Sykes 2003
-# Version 0.15
+# Version 0.16
 #
 # Usage:
 # class A
@@ -18,8 +18,6 @@
 # mad.system.some_method(paramA, ...)
 # mad.take_snapshot
 #
-
-require 'singleton'
 
 module Madeleine
   module Automatic
@@ -54,8 +52,8 @@ module Madeleine
       end
 
       def execute(system)
-        System.instance.register_sysid(@sysid) if (system.sysid != @sysid)
-        Thread.current[:syscont].listid2ref(@myid).thing.send(@symbol, *@args, &@block)
+        AutomaticSnapshotMadeleine.register_sysid(@sysid) if (system.sysid != @sysid)
+        Thread.current[:system].listid2ref(@myid).thing.send(@symbol, *@args, &@block)
       end
     end
 #
@@ -67,9 +65,9 @@ module Madeleine
       
       def initialize(x)
         if (x) 
-          raise "App object created outside of app" unless Thread.current[:syscont]
-          @sysid = Thread.current[:syscont].sysid
-          @myid = Thread.current[:syscont].add(self)
+          raise "App object created outside of app" unless Thread.current[:system]
+          @sysid = Thread.current[:system].sysid
+          @myid = Thread.current[:system].add(self)
           @thing = x
         end
       end
@@ -77,14 +75,14 @@ module Madeleine
       def method_missing(symbol, *args, &block)
 #      print "Sending #{symbol} to #{@thing.to_s}, myid=#{@myid}, sysid=#{@sysid}\n"
         raise NoMethodError, "Undefined method" unless @thing.respond_to?(symbol)
-        if (Thread.current[:syscont])
+        if (Thread.current[:system])
           @thing.send(symbol, *args, &block)
         else
-          Thread.current[:syscont] = System.instance.syscontainers[@sysid]
+          Thread.current[:system] = AutomaticSnapshotMadeleine.systems[@sysid]
           begin
-            x = Thread.current[:syscont].execute_command(Command.new(symbol, @myid, @sysid, *args, &block))
+            x = Thread.current[:system].execute_command(Command.new(symbol, @myid, @sysid, *args, &block))
           ensure
-            Thread.current[:syscont] = false
+            Thread.current[:system] = false
           end
           x
         end
@@ -96,7 +94,7 @@ module Madeleine
             [@myid.to_s, @sysid].pack("A8A30")
           else
             Thread.current[:snapshot_memory][self] = true
-            [@myid.to_s, @sysid].pack("A8A30") + Thread.current[:syscont].marshaller.dump(@thing, depth)
+            [@myid.to_s, @sysid].pack("A8A30") + Thread.current[:system].marshaller.dump(@thing, depth)
           end
         else
           [@myid.to_s, @sysid].pack("A8A30")
@@ -108,15 +106,16 @@ module Madeleine
         a = str.unpack("A8A30a*")
         x.myid = a[0].to_i
         x.sysid = a[1]
-        x = Thread.current[:syscont].restore(x)
-        x.thing = Thread.current[:syscont].marshaller.load(a[2]) if (a[2] > "")
+        x = Thread.current[:system].restore(x)
+        x.thing = Thread.current[:system].marshaller.load(a[2]) if (a[2] > "")
         x
       end
     end
 
 #
-# AutomaticSnapshotMadeleine class
+# AutomaticSnapshotMadeleine class - extends SnapshotMadeleine
 # Keeps a record of Prox objects by internal id for a system
+# Also has class methods that keep track of systems by sysid
 #
     class AutomaticSnapshotMadeleine < SnapshotMadeleine
       attr_accessor :sysid
@@ -126,17 +125,17 @@ module Madeleine
         @sysid ||= Time.now.to_f.to_s + Thread.current.object_id.to_s # Gererate a new sysid
         @obj_count = 0                                         # This sysid will be used only if new object is 
         @list = {}                                             # taken by madeleine
-        Thread.current[:syscont] = self   # also ensures that no commands are generated during restore
-        System.instance.register_sysid(@sysid)   # this sysid may be overridden, but need to record it anyway
+        Thread.current[:system] = self   # also ensures that no commands are generated during restore
+        AutomaticSnapshotMadeleine.register_sysid(@sysid)   # this sysid may be overridden, but need to record it anyway
         begin
           if marshaller.nil?
             super(directory_name, &new_system_block)
           else
             super(directory_name, marshaller, &new_system_block)
           end
-          System.instance.register_sysid(@sysid)  # needed if there were no commands
+          AutomaticSnapshotMadeleine.register_sysid(@sysid)  # needed if there were no commands
         ensure
-          Thread.current[:syscont] = false
+          Thread.current[:system] = false
         end
       end
 
@@ -164,32 +163,32 @@ module Madeleine
 
       def take_snapshot
         begin
-          Thread.current[:syscont] = self
+          Thread.current[:system] = self
           Thread.current[:snapshot_memory] = {}
           super
         ensure
           Thread.current[:snapshot_memory] = nil
-          Thread.current[:syscont] = false
+          Thread.current[:system] = false
         end
       end
 
-    end
-#
-# System
-# This is a singleton class that keeps track of syscontainers
-#
-    class System
-      include Singleton
-      attr_reader :syscontainers
-
-      def register_sysid(sid)  # sets the real sid for this thread's container - during startup or from a command
-        @syscontainers ||= {}  # holds syscontainers by sysid
-        @syscontainers[sid] = Thread.current[:syscont]
-        @syscontainers[sid].sysid = sid 
-        @syscontainers[sid].list.each {|o|  # set all the prox objects that already exist to have the right sysid
+# sets the real sid for this thread's system - during startup or from a command
+      def AutomaticSnapshotMadeleine.register_sysid(sid)
+        Thread.critical = true
+        @@systems ||= {}  # holds systems by sysid
+        @@systems[sid] = Thread.current[:system]
+        Thread.critical = false
+        @@systems[sid].sysid = sid 
+        @@systems[sid].list.each {|o|  # set all the prox objects that already exist to have the right sysid
                          ObjectSpace._id2ref(o[1]).sysid = sid
                        }
       end
+
+      def AutomaticSnapshotMadeleine.systems
+        @@systems
+      end
+
     end
+
   end
 end
