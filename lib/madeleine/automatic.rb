@@ -87,16 +87,15 @@ module MadeleineAutomatic
     end
 
     def _dump(depth)
-      "%d#" % @myid + "%s#" % @sysid + Marshal.dump(@thing)
+      [@myid.to_s, @sysid].pack("A7A25") +  Marshal.dump(@thing)
     end
 
     def Prox._load(str)
       x = Prox.new(nil)
-      a = str.split("#")
+      a = str.unpack("A7A25a*")
       x.myid = a[0].to_i
       x.sysid = a[1]
-      str = a[2..-1].join("#")
-      x.thing = Marshal.load(str)
+      x.thing = Marshal.load(a[2])
       System.instance.thread2sys.restore(x)
     end
   end
