@@ -1,4 +1,5 @@
 
+* Access to global lock from client code
 * More sample code
 * More documentation
 * Get it working on Windows
