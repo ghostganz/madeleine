@@ -42,28 +42,15 @@ module Madeleine
       log_factory = DefaultLogFactory.new
       logger = Logger.new(directory_name,
                           log_factory)
-      recoverer = Recoverer.new(directory_name,
-                                snapshot_marshaller)
       snapshotter = Snapshotter.new(directory_name,
                                     snapshot_marshaller)
       lock = DefaultLock.new
-      
+      recoverer = Recoverer.new(directory_name,
+                                snapshot_marshaller)
       system = recoverer.recover_snapshot(new_system_block)
-
       executer = Executer.new(system)
-
-      recover_log(executer, directory_name)
-
+      recoverer.recover_logs(executer)
       DefaultSnapshotMadeleine.new(system, logger, snapshotter, lock, executer)
-    end
-
-    private
-
-    def self.recover_log(executer, directory_name)
-      log_recoverer = LogRecoverer.new(executer, directory_name)
-      executer.recovery {
-        log_recoverer.recover_logs
-      }
     end
   end
 
@@ -150,7 +137,7 @@ module Madeleine
     private
 
     def verify_command_sane(command)
-      if ! command.respond_to?(:execute)
+      unless command.respond_to?(:execute)
         raise InvalidCommandException.new("Commands must have an 'execute' method")
       end
     end
@@ -224,28 +211,23 @@ module Madeleine
       end
       system
     end
-  end
 
-  class LogRecoverer #:nodoc:
-
-    def initialize(executer, directory_name)
-      @executer, @directory_name = executer, directory_name
-    end
-
-    def recover_logs
-      CommandLog.log_file_names(@directory_name).each {|file_name|
-        open(@directory_name + File::SEPARATOR + file_name, "rb") {|log|
-          recover_log(log)
+    def recover_logs(executer)
+      executer.recovery {
+        CommandLog.log_file_names(@directory_name).each {|file_name|
+          open(@directory_name + File::SEPARATOR + file_name, "rb") {|log|
+            recover_log(executer, log)
+          }
         }
       }
     end
 
     private
 
-    def recover_log(log)
+    def recover_log(executer, log)
       while ! log.eof?
         command = Marshal.load(log)
-        @executer.execute(command)
+        executer.execute(command)
       end
     end
   end
