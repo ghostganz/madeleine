@@ -8,7 +8,7 @@ require 'thread'
 
 module Madeleine
 
-  MADELEINE_VERSION = "0.0"
+  MADELEINE_VERSION = "0.1"
 
   class SnapshotMadeleine
     attr_reader :system

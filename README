@@ -60,9 +60,9 @@ Licence:
 
 Credits:
 
-    Anders Bengtsson  -  Code
-    Johan Lind        -  Finding bugs, feedback
-    Jon Tirsén        -  Design feedback
+    Madeleine was written by Anders Bengtsson, with the help of Johan
+    Lind (finding bugs, feedback), Håkan Råberg (testing) and Jon
+    Tirsén (design feedback).
 
     Thanks to Klaus Wuestefeld and the Prevayler developers for the
     model of this software; to Minero Aoki for the installer; to Matz and
