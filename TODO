@@ -1,13 +1,9 @@
 
 * More sample code
 * Documentation
-
+* Other marshalling options (YAML, etc)
 * Get it working on Windows
-
+* Transparent commands (using aspects)
+* Rollback
 * Do benchmarks
 * Handle broken logs?
-
-* Transparent commands (using aspects)
-
-* Rollback
-

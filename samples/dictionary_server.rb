@@ -55,17 +55,23 @@ class DictionaryServer
   end
 
   def add(key, value)
+    # When adding a new key-value pair we modify the system, so
+    # this operation has to be done through a command.
     @madeleine.execute_command(Addition.new(key, value))
   end
 
   def lookup(key)
+    # A lookup is a read-only operation, so we can do it directly
+    # on the system. We could have done this as a command too, if
+    # we had wanted to.
     @dictionary.lookup(key)
   end
 end
 
 
 system = Dictionary.new
-madeleine = Madeleine::SnapshotMadeleine.new(system, "dictionary-base")
+madeleine = Madeleine::SnapshotMadeleine.new(system,
+                                             "dictionary-base")
 
 Thread.new(madeleine) {
   puts "Taking snapshot every 30 seconds."
@@ -75,6 +81,7 @@ Thread.new(madeleine) {
   end
 }
 
-DRb.start_service("druby://localhost:1234", DictionaryServer.new(madeleine))
+DRb.start_service("druby://localhost:1234",
+                  DictionaryServer.new(madeleine))
 DRb.thread.join
 
