@@ -1,7 +1,6 @@
 
 require 'madeleine/clock'
 
-
 class ClockedAddingSystem
   include Madeleine::Clock::ClockedSystem
 
@@ -16,22 +15,6 @@ class ClockedAddingSystem
     @total
   end
 end
-
-require 'test_persistence'
-
-class ClockedPersistenceTest < PersistenceTest
-
-  def create_madeleine
-    ClockedSnapshotMadeleine.new(prevalence_base()) {
-      ClockedAddingSystem.new
-    }
-  end
-
-  def prevalence_base
-    "ClockedPrevalenceBase"
-  end
-end
-
 
 class TimeTest < Test::Unit::TestCase
 
@@ -109,20 +92,6 @@ class TimeTest < Test::Unit::TestCase
 end
 
 
-class ClockedCustomMarshallerTest < CustomMarshallerTest
-
-  def prevalence_base
-    "clocked-custom-marshaller-test"
-  end
-
-  def madeleine_class
-    ClockedSnapshotMadeleine
-  end
-end
-
-
 def add_clocked_tests(suite)
-  suite << ClockedPersistenceTest.suite
   suite << TimeTest.suite
-  suite << ClockedCustomMarshallerTest.suite
 end

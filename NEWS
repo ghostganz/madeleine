@@ -1,5 +1,6 @@
 
-    * execute_query()
+    * Deprecated ClockedSnapshotMadeleine
+    * Added execute_query()
     * API documentation in RDoc format
 
 Madeleine 0.3 (May 15, 2003):

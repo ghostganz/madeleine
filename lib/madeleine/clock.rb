@@ -7,22 +7,8 @@ require 'madeleine'
 module Madeleine
   module Clock
 
-    # Optimizes the logging of commands from a TimeActor.
+    # Deprecated. Use SnapshotMadeleine instead.
     class ClockedSnapshotMadeleine < SnapshotMadeleine
-
-      def initialize(directory_name, marshaller=nil, &new_system_block)
-        if marshaller.nil?
-          super(directory_name, &new_system_block)
-        else
-          super(directory_name, marshaller, &new_system_block)
-        end
-      end
-
-      private
-
-      def create_logger(directory_name, log_factory)
-        TimeOptimizingLogger.new(directory_name, log_factory)
-      end
     end
 
     # Let your system extend this module if you need to access the
@@ -102,8 +88,8 @@ module Madeleine
     #
 
     # Deprecated. Merged into default implementation.
-    TimeOptimizingLogger = Logger
-
+    class TimeOptimizingLogger < Logger
+    end
 
     class Tick #:nodoc:
 
