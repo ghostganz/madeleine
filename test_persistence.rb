@@ -373,7 +373,8 @@ suite << ErrorHandlingTest.suite
 
 require 'test_clocked'
 add_clocked_tests(suite)
-
+require 'test_automatic'
+add_automatic_tests(suite)
 
 require 'test/unit/ui/console/testrunner'
 Test::Unit::UI::Console::TestRunner.run(suite)

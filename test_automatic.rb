@@ -288,7 +288,7 @@ class CircularReferenceTest < AutoTest
   end
 end
 
-class CustomMarshallerTest < AutoTest
+class AutomaticCustomMarshalllerTest < AutoTest
   def load(from)
     if (from.kind_of?(IO))
       s = from.read
@@ -348,18 +348,28 @@ class ThreadedStartupTest < AutoTest
   end
 end
 
-suite = Test::Unit::TestSuite.new("AutomaticMadeleine")
-suite << BasicTest.suite
-suite << ObjectOutsideTest.suite
-suite << BlockGivenTest.suite
-suite << NonPersistedObjectTest.suite
-suite << RefInExternalObjTest.suite
-suite << BasicThreadSafetyTest.suite
-suite << InvalidMethodTest.suite
-suite << CircularReferenceTest.suite
-suite << CustomMarshallerTest.suite
-suite << ThreadedStartupTest.suite
 
+def add_automatic_tests(suite)
+  suite << BasicTest.suite
+  suite << ObjectOutsideTest.suite
+  suite << BlockGivenTest.suite
+  suite << NonPersistedObjectTest.suite
+  suite << RefInExternalObjTest.suite
+  suite << InvalidMethodTest.suite
+  suite << CircularReferenceTest.suite
+  suite << AutomaticCustomMarshalllerTest.suite
+end
 
-require 'test/unit/ui/console/testrunner'
-Test::Unit::UI::Console::TestRunner.run(suite)
+def add_slow_automatic_tests(suite)
+  suite << ThreadedStartupTest.suite
+  suite << BasicThreadSafetyTest.suite
+end
+
+if __FILE__ == $0
+  slowsuite = Test::Unit::TestSuite.new("AutomaticMadeleine (including slow tests)")
+  add_automatic_tests(slowsuite)
+  add_slow_automatic_tests(slowsuite)
+
+  require 'test/unit/ui/console/testrunner'
+  Test::Unit::UI::Console::TestRunner.run(slowsuite)
+end
