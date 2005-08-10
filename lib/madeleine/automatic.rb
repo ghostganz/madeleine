@@ -153,6 +153,7 @@ module Madeleine
     class Automatic_marshaller #:nodoc:
       def Automatic_marshaller.load(io)
         restored_obj = Deserialize.load(io, Thread.current[:system].marshaller)
+p restored_obj if restored_obj.class != Prox
         ObjectSpace.each_object(Prox) {|o| Thread.current[:system].restore(o) if (o.sysid == restored_obj.sysid)}
         restored_obj
       end
@@ -334,7 +335,10 @@ module Madeleine
 #
       def close
         begin
-          @list.each_key {|k| myid2ref(k).sysid = nil}
+          @list.each_key {|k|
+            ref = myid2ref(k)
+            ref.sysid = nil if ref.class == Prox
+          }
         rescue RangeError
           # do nothing
         end
@@ -389,6 +393,7 @@ module Madeleine
 #
       def Deserialize.load(io, marshaller=Marshal)
         begin
+          raise "Must detect with YAML" if marshaller == YAML
           marshaller.load(io)
         rescue Exception => e
           io.rewind
