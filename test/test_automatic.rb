@@ -91,6 +91,10 @@ class M
   end
 end
 
+class N < Hash
+  include Madeleine::Automatic::Interceptor
+end
+
 # Basic test, and that system works in SAFE level 1
 class BasicTest < Test::Unit::TestCase
   include AutoTest
@@ -384,5 +388,15 @@ class DontInterceptTest < Test::Unit::TestCase
     mad_3 = make_system(prevalence_base) { K.new }
     assert_equal(-2, mad_3.system.k, "Snapshot and commands")
     mad_3.close
+  end
+end
+
+class NoMethodsAddedTest < Test::Unit::TestCase
+  include AutoTest
+
+  def test_main
+    mad = create_new_system(N, prevalence_base)
+    mad.system["a"] = 99
+    mad.close    
   end
 end

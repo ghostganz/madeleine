@@ -76,6 +76,7 @@ module Madeleine
           alias_method :_old_new, :new
 
           def new(*args, &block)
+            @read_only_methods ||= []
             Prox.new(_old_new(*args, &block))
           end
 #
