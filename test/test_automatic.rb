@@ -123,6 +123,10 @@ class M
   end
 end
 
+class N < Hash
+  include Madeleine::Automatic::Interceptor
+end
+
 class AutoTest < Test::Unit::TestCase
 
   def persister
@@ -542,6 +546,14 @@ class DontInterceptTest < AutoTest
     mad_3 = make_system(prevalence_base) { K.new }
     assert_equal(-2, mad_3.system.k, "Snapshot and commands")
     mad_3.close
+  end
+end
+
+class NoMethodsAddedTest < AutoTest
+  def test_main
+    mad = create_new_system(N, prevalence_base)
+    mad.system["a"] = 99
+    mad.close    
   end
 end
 
