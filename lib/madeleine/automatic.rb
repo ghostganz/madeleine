@@ -7,8 +7,8 @@ module Madeleine
 # Automatic commands for Madeleine
 #
 # Author::    Stephen Sykes <sds@stephensykes.com>
-# Copyright:: Copyright (C) 2003-2004
-# Version::   0.41
+# Copyright:: Copyright (C) 2003-2006
+# Version::   0.42
 #
 # This module provides a way of automatically generating command objects for madeleine to
 # store.  It works by making a proxy object for all objects of any classes in which it is included.
@@ -270,14 +270,19 @@ p restored_obj if restored_obj.class != Prox
         @@systems[@sysid] = self
         Thread.critical = false
         @marshaller = marshaller # until attrb
+
         begin
           @persister = persister.new(directory_name, Automatic_marshaller, &new_system_block)
           @list.delete_if {|k,v|  # set all the prox objects that now exist to have the right sysid
             begin
-              ObjectSpace._id2ref(v).sysid = @sysid
+              obj = ObjectSpace._id2ref(v)
+              raise unless obj.respond_to?(:sysid=)
+              obj.sysid = @sysid
               false
             rescue RangeError
               true # Id was to a GC'd object, delete it
+            rescue RuntimeError
+              true # GC'd object, and id was reused for something else
             end
           }
         ensure
