@@ -2,7 +2,7 @@
 # Madeleine - Ruby Object Prevalence
 #
 # Author::    Anders Bengtsson <ndrsbngtssn@yahoo.se>
-# Copyright:: Copyright (c) 2003-2004
+# Copyright:: Copyright (c) 2003-2006
 #
 # Usage:
 #
@@ -23,7 +23,7 @@ module Madeleine
   require 'madeleine/files'
   require 'madeleine/sanity'
 
-  MADELEINE_VERSION = "0.7.1"
+  MADELEINE_VERSION = "0.7.2"
 
   class SnapshotMadeleine
 

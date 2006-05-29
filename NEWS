@@ -1,4 +1,7 @@
 
+Madeleine 0.7.2 (May 29, 2006):
+
+    * An automatic class with no methods would cause an error
     * System sanity check at first use
     * Now creates full path to storage files, not just the last
       directory (reported by Wayne Vucenic)
