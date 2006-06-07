@@ -1,6 +1,6 @@
 #
 # Author::    Anders Bengtsson <ndrsbngtssn@yahoo.se>
-# Copyright:: Copyright (c) 2004
+# Copyright:: Copyright (c) 2004-2006
 #
 
 require 'tempfile'
@@ -36,6 +36,7 @@ module Madeleine
 
     def file_check
       Tempfile.open("madeleine_sanity") do |file|
+        file.binmode  # Needed for win32
         file.write(@testdata)
         file.flush
         open(file.path, 'rb') do |read_file|
