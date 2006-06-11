@@ -3,7 +3,7 @@ require 'rubygems'
 
 spec = Gem::Specification.new do |s|
   s.name = 'madeleine'
-  s.version = '0.7.2'
+  s.version = '0.7.3'
   s.platform = Gem::Platform::RUBY
   s.required_ruby_version = ">= 1.8.1"
   s.summary = "Madeleine is a Ruby implementation of Object Prevalence"
@@ -11,7 +11,7 @@ spec = Gem::Specification.new do |s|
   s.autorequire = 'madeleine'
   s.author = "Anders Bengtsson"
   s.email = "ndrsbngtssn@yahoo.se"
-  s.homepage = "http://madeleine.sourceforge.net"
+  s.homepage = "http://madeleine.rubyforge.org"
   s.files = Dir.glob("lib/**/*.rb")
   s.files += Dir.glob("samples/**/*.rb")
   s.files += Dir.glob("contrib/**/*.rb")

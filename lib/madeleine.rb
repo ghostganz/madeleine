@@ -23,7 +23,7 @@ module Madeleine
   require 'madeleine/files'
   require 'madeleine/sanity'
 
-  MADELEINE_VERSION = "0.7.2"
+  MADELEINE_VERSION = "0.7.3"
 
   class SnapshotMadeleine
 

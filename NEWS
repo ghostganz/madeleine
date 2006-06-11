@@ -1,4 +1,6 @@
 
+Madeleine 0.7.3 (June 11, 2006):
+
     * Fixed missing binmode, causing self-test to fail on win32
 
 Madeleine 0.7.2 (May 29, 2006):
