@@ -6,10 +6,9 @@ unless $LOAD_PATH.include?("test")
   $LOAD_PATH.unshift("test")
 end
 
-require 'test/unit'
 require 'madeleine'
 
-class ExecuterTest < Test::Unit::TestCase
+class ExecuterTest < MiniTest::Unit::TestCase
 
   def test_executer
     system = Object.new

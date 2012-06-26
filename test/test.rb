@@ -5,7 +5,9 @@ $LOAD_PATH.unshift("lib")
 $LOAD_PATH.unshift("test")
 
 require 'madeleine'
-require 'test/unit'
+require 'rubygems'
+gem 'minitest'
+require 'minitest/autorun'
 
 class Append
   def initialize(value)
@@ -38,7 +40,7 @@ require 'test_persistence'
 require 'test_platforms'
 require 'test_zmarshal'
 
-class SnapshotMadeleineTest < Test::Unit::TestCase
+class SnapshotMadeleineTest < MiniTest::Unit::TestCase
   include TestUtils
 
   def teardown
@@ -58,7 +60,7 @@ class SnapshotMadeleineTest < Test::Unit::TestCase
   end
 end
 
-class NumberedFileTest < Test::Unit::TestCase
+class NumberedFileTest < MiniTest::Unit::TestCase
 
   def test_main
     target = Madeleine::NumberedFile.new(File::SEPARATOR + "foo", "bar", 321)
@@ -69,7 +71,7 @@ class NumberedFileTest < Test::Unit::TestCase
 end
 
 
-class LoggerTest < Test::Unit::TestCase
+class LoggerTest < MiniTest::Unit::TestCase
   include TestUtils
 
   def teardown
@@ -100,7 +102,7 @@ class LoggerTest < Test::Unit::TestCase
   end
 end
 
-class CommandVerificationTest < Test::Unit::TestCase
+class CommandVerificationTest < MiniTest::Unit::TestCase
 
   def teardown
     Dir.delete("foo")
@@ -115,7 +117,7 @@ class CommandVerificationTest < Test::Unit::TestCase
 end
 
 
-class CustomMarshallerTest < Test::Unit::TestCase
+class CustomMarshallerTest < MiniTest::Unit::TestCase
   include TestUtils
 
   def teardown
@@ -161,7 +163,7 @@ class ErrorRaisingCommand
   end
 end
 
-class ErrorHandlingTest < Test::Unit::TestCase
+class ErrorHandlingTest < MiniTest::Unit::TestCase
   include TestUtils
 
   def teardown
@@ -183,7 +185,7 @@ class ErrorHandlingTest < Test::Unit::TestCase
   end
 end
 
-class QueryTest < Test::Unit::TestCase
+class QueryTest < MiniTest::Unit::TestCase
   include TestUtils
 
   def teardown
@@ -209,7 +211,7 @@ class QueryTest < Test::Unit::TestCase
 end
 
 
-class TimeOptimizingLoggerTest < Test::Unit::TestCase
+class TimeOptimizingLoggerTest < MiniTest::Unit::TestCase
   include TestUtils
 
   def setup
@@ -274,7 +276,7 @@ class TimeOptimizingLoggerTest < Test::Unit::TestCase
 end
 
 
-class SharedLockQueryTest < Test::Unit::TestCase
+class SharedLockQueryTest < MiniTest::Unit::TestCase
   include TestUtils
 
   def prevalence_base
@@ -307,7 +309,7 @@ class SharedLockQueryTest < Test::Unit::TestCase
 end
 
 
-class SantiyCheckTest < Test::Unit::TestCase
+class SantiyCheckTest < MiniTest::Unit::TestCase
 
   def test_sanity_check
     target = Madeleine::SanityCheck.instance

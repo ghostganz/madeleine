@@ -19,7 +19,7 @@ end
 #
 # Test case provided by Steve Conover.
 
-class WierdWin32CorruptionTest < Test::Unit::TestCase
+class WierdWin32CorruptionTest < MiniTest::Unit::TestCase
   include TestUtils
 
   def teardown

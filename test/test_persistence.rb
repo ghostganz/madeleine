@@ -9,7 +9,6 @@
 $LOAD_PATH.unshift("lib")
 
 require 'madeleine'
-require 'test/unit'
 
 class AddingSystem
   attr_reader :total
@@ -39,7 +38,7 @@ class Addition
 end
 
 
-class PersistenceTest < Test::Unit::TestCase
+class PersistenceTest < MiniTest::Unit::TestCase
 
   def setup
     @madeleine = nil

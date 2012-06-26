@@ -96,7 +96,7 @@ class N < Hash
 end
 
 # Basic test, and that system works in SAFE level 1
-class BasicTest < Test::Unit::TestCase
+class BasicTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -112,7 +112,7 @@ class BasicTest < Test::Unit::TestCase
   end
 end
 
-class ObjectOutsideTest < Test::Unit::TestCase
+class ObjectOutsideTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -126,7 +126,7 @@ end
 
 # Passing a block when it would generate a command is not allowed because blocks cannot
 # be serialised.  However, block passing/yielding inside the application is ok.
-class BlockGivenTest < Test::Unit::TestCase
+class BlockGivenTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -141,7 +141,7 @@ class BlockGivenTest < Test::Unit::TestCase
   end
 end
 
-class NonPersistedObjectTest < Test::Unit::TestCase
+class NonPersistedObjectTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -170,7 +170,7 @@ class NonPersistedObjectTest < Test::Unit::TestCase
   end
 end
 
-class RefInExternalObjTest < Test::Unit::TestCase
+class RefInExternalObjTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -206,7 +206,7 @@ class RefInExternalObjTest < Test::Unit::TestCase
   end
 end
 
-class BasicThreadSafetyTest < Test::Unit::TestCase
+class BasicThreadSafetyTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -221,7 +221,7 @@ class BasicThreadSafetyTest < Test::Unit::TestCase
   end
 end
 
-class InvalidMethodTest < Test::Unit::TestCase
+class InvalidMethodTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -235,7 +235,7 @@ class InvalidMethodTest < Test::Unit::TestCase
   end
 end
 
-class CircularReferenceTest < Test::Unit::TestCase
+class CircularReferenceTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -266,7 +266,7 @@ class CircularReferenceTest < Test::Unit::TestCase
   end
 end
 
-class AutomaticCustomMarshallerTest < Test::Unit::TestCase
+class AutomaticCustomMarshallerTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -349,7 +349,7 @@ class AutomaticCustomMarshallerTest < Test::Unit::TestCase
 end
 
 # tests restoring when objects get unreferenced and GC'd during restore
-class FinalisedTest < Test::Unit::TestCase
+class FinalisedTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -363,7 +363,7 @@ class FinalisedTest < Test::Unit::TestCase
   end
 end
 
-class DontInterceptTest < Test::Unit::TestCase
+class DontInterceptTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -391,7 +391,7 @@ class DontInterceptTest < Test::Unit::TestCase
   end
 end
 
-class NoMethodsAddedTest < Test::Unit::TestCase
+class NoMethodsAddedTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main

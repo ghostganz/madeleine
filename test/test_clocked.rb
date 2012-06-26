@@ -16,7 +16,7 @@ class ClockedAddingSystem
   end
 end
 
-class TimeTest < Test::Unit::TestCase
+class TimeTest < MiniTest::Unit::TestCase
 
   def test_clock
     target = Madeleine::Clock::Clock.new
@@ -30,9 +30,7 @@ class TimeTest < Test::Unit::TestCase
     target.forward_to(t2)
     assert_equal(t2, target.time)
 
-    assert_nothing_raised() {
-      target.forward_to(t2)
-    }
+    target.forward_to(t2) # Should raise nothing
   end
 
   def test_time_actor

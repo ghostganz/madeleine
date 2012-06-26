@@ -7,9 +7,7 @@ unless $LOAD_PATH.include?("test")
 end
 
 require 'madeleine'
-require 'test/unit'
 require 'stringio'
-require 'sillymock'
 
 class ExampleCommand
   attr :value
@@ -23,7 +21,7 @@ class ExampleCommand
   end
 end
 
-class CommandLogTest < Test::Unit::TestCase
+class CommandLogTest < MiniTest::Unit::TestCase
 
   def test_file_opening
     file_service = Object.new
@@ -65,15 +63,15 @@ class CommandLogTest < Test::Unit::TestCase
 
   def test_writing_command
     command = ExampleCommand.new(1234)
-    file = Mock.new
-    file.expects(:write, [Marshal.dump(command)])
-    file.expects(:flush)
-    file.expects(:fsync)
+    file = MiniTest::Mock.new
+    file.expect(:write, true, [Marshal.dump(command)])
+    file.expect(:flush, true)
+    file.expect(:fsync, true)
 
-    file_service = Mock.new
-    file_service.expects(:exist?, ["some/path"]).return_value(true)
-    file_service.expects(:dir_entries, ["some/path"]).return_value([])
-    file_service.expects(:open).return_value(file)
+    file_service = MiniTest::Mock.new
+    file_service.expect(:exist?, true, ["some/path"])
+    file_service.expect(:dir_entries, [], ["some/path"])
+    file_service.expect(:open, file, ["some/path/000000000000000000001.command_log", "wb"])
 
     target = Madeleine::CommandLog.new("some/path", file_service)
     target.store(command)

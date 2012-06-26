@@ -1,4 +1,5 @@
 #!/usr/local/bin/ruby -w
+# -*- coding: iso-8859-1 -*-
 #
 # Copyright(c) 2003 Håkan Råberg
 #
@@ -14,7 +15,7 @@ require 'madeleine/clock'
 
 
 module Madeleine::Batch
-  class BatchedSnapshotMadeleineTest < Test::Unit::TestCase
+  class BatchedSnapshotMadeleineTest < MiniTest::Unit::TestCase
 
     class ArraySystem < Array
       include Madeleine::Clock::ClockedSystem
@@ -121,7 +122,7 @@ module Madeleine::Batch
     end
   end
 
-  class BatchedLogTest < Test::Unit::TestCase
+  class BatchedLogTest < MiniTest::Unit::TestCase
 
     class MockMadeleine
       def initialize(logger)
@@ -236,10 +237,10 @@ def add_batched_tests(suite)
 end
 
 if __FILE__ == $0
-  suite = Test::Unit::TestSuite.new("BatchedLogTest")
+  suite = MiniTest::Unit::TestSuite.new("BatchedLogTest")
   add_batched_tests(suite)
 
   require 'test/unit/ui/console/testrunner'
   Thread.abort_on_exception = true
-  Test::Unit::UI::Console::TestRunner.run(suite)
+  MiniTest::Unit::UI::Console::TestRunner.run(suite)
 end

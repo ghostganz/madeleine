@@ -9,7 +9,7 @@
 $LOAD_PATH.unshift("test")
 require 'test_automatic_common'
 
-class ThreadConfidenceTest < Test::Unit::TestCase
+class ThreadConfidenceTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
@@ -57,7 +57,7 @@ class ThreadConfidenceTest < Test::Unit::TestCase
 end
 
 # tests thread safety during system creation, particularly that different system ids are generated
-class ThreadedStartupTest < Test::Unit::TestCase
+class ThreadedStartupTest < MiniTest::Unit::TestCase
   include AutoTest
 
   def test_main
