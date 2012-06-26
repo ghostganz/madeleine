@@ -1,5 +1,8 @@
 # Emacs cruft
 *~
 
+# Generated docs
+/docs/api
+
 PrevalenceBase
 *.gem
