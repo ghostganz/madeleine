@@ -22,8 +22,9 @@ module Madeleine
   require 'fileutils'
   require 'madeleine/files'
   require 'madeleine/sanity'
+  require 'madeleine/version'
 
-  MADELEINE_VERSION = "0.7.3"
+  MADELEINE_VERSION = Madeleine::VERSION
 
   class SnapshotMadeleine
 
