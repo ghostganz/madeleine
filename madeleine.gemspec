@@ -18,4 +18,5 @@ spec = Gem::Specification.new do |s|
   s.files += ['README', 'NEWS', 'COPYING']
 
   s.add_development_dependency 'minitest', '~> 3.1.0'
+  s.add_development_dependency 'rake'
 end

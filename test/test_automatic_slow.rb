@@ -2,12 +2,10 @@
 # Copyright(c) 2003-2004 Stephen Sykes
 # Copyright(c) 2003-2004 Anders Bengtsson
 #
-# Slow-running tests that are not part of the main (test.rb)
-# test suite.
+# Slow-running tests, that historically weren't part of the main test suite.
 #
 
-$LOAD_PATH.unshift("test")
-require 'test_automatic_common'
+require File.dirname(__FILE__) + '/automatic_test_common.rb'
 
 class ThreadConfidenceTest < MiniTest::Unit::TestCase
   include AutoTest

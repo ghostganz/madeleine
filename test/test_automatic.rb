@@ -4,8 +4,7 @@
 # Copyright(c) 2003-2004 Anders Bengtsson
 #
 
-$LOAD_PATH.unshift("test")
-require 'test_automatic_common'
+require File.dirname(__FILE__) + '/automatic_test_common.rb'
 
 class A
   include Madeleine::Automatic::Interceptor

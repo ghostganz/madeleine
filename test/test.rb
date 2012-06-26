@@ -1,9 +1,3 @@
-#!/usr/bin/env ruby
-#
-
-$LOAD_PATH.unshift("lib")
-$LOAD_PATH.unshift("test")
-
 require 'madeleine'
 require 'rubygems'
 gem 'minitest'
@@ -31,14 +25,6 @@ module TestUtils
     Dir.delete(directory_name)
   end
 end
-
-require 'test_command_log'
-require 'test_executer'
-require 'test_clocked'
-require 'test_automatic'
-require 'test_persistence'
-require 'test_platforms'
-require 'test_zmarshal'
 
 class SnapshotMadeleineTest < MiniTest::Unit::TestCase
   include TestUtils

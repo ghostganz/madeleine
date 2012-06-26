@@ -5,7 +5,6 @@
 # Common classes for test_automatic.rb and test_automatic_slow.rb
 #
 
-$LOAD_PATH.unshift("lib")
 require 'madeleine'
 require 'madeleine/automatic'
 #require 'contrib/batched.rb' # uncomment if testing batched
