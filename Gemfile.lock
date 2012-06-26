@@ -1,0 +1,16 @@
+PATH
+  remote: .
+  specs:
+    madeleine (0.8.0.pre)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    minitest (3.1.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  madeleine!
+  minitest (~> 3.1.0)
