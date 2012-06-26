@@ -11,16 +11,6 @@ prevalence layer.
 Learn more about object prevalence at <http://www.prevayler.org/>.
 
 
-Installation:
-
-    Typical installation procedure is:
-    $ ruby install.rb config
-    $ ruby install.rb setup
-    # ruby install.rb install  (may require root privilege)
-    Try 'ruby install.rb --help' for detailed usage.
-
-    [From the documentation of Minero Aoki's 'install.rb']
-
 Usage:
 
     require 'madeleine'
