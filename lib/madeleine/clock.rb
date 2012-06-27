@@ -53,12 +53,12 @@ module Madeleine
         @madeleine = madeleine
         @is_destroyed = false
         send_tick
-        @thread = Thread.new {
+        @thread = Thread.new do
           until @is_destroyed
             sleep(delay)
             send_tick
           end
-        }
+        end
       end
 
       def send_tick
@@ -75,8 +75,8 @@ module Madeleine
         @time = Time.at(0)
       end
 
-      def forward_to(newTime)
-        @time = newTime
+      def forward_to(new_time)
+        @time = new_time
       end
     end
 

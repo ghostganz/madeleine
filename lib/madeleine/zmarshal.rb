@@ -24,7 +24,7 @@ module Madeleine
   #
   #  marshaller = Madeleine::ZMarshal.new(YAML)
   #  madeleine = SnapshotMadeleine.new("my_example_storage", marshaller) {
-  #    SomeExampleApplication.new()
+  #    SomeExampleApplication.new
   #  }
   #
   class ZMarshal

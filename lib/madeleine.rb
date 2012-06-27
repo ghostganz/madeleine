@@ -9,7 +9,7 @@
 #  require 'madeleine'
 #
 #  madeleine = SnapshotMadeleine.new("my_example_storage") {
-#    SomeExampleApplication.new()
+#    SomeExampleApplication.new
 #  }
 #
 #  madeleine.execute_command(command)
@@ -88,11 +88,11 @@ module Madeleine
     # * <tt>command</tt> - The command to execute on the system.
     def execute_command(command)
       verify_command_sane(command)
-      @lock.synchronize {
+      @lock.synchronize do
         raise MadeleineClosedException if @closed
         @logger.store(command)
         @executer.execute(command)
-      }
+      end
     end
 
     # Execute a query on the prevalent system.
@@ -103,9 +103,9 @@ module Madeleine
     #
     # * <tt>query</tt> - The query command to execute
     def execute_query(query)
-      @lock.synchronize_shared {
+      @lock.synchronize_shared do
         @executer.execute(query)
-      }
+      end
     end
 
     # Take a snapshot of the current system.
@@ -124,11 +124,11 @@ module Madeleine
     #    end
     #  }
     def take_snapshot
-      @lock.synchronize {
+      @lock.synchronize do
         @logger.close
         @snapshotter.take(@system)
         @logger.reset
-      }
+      end
     end
 
     # Close the system.
@@ -136,10 +136,10 @@ module Madeleine
     # The log file is closed and no new commands can be received
     # by this Madeleine.
     def close
-      @lock.synchronize {
+      @lock.synchronize do
         @logger.close
         @closed = true
-      }
+      end
     end
 
     private
@@ -214,9 +214,9 @@ module Madeleine
       id = SnapshotFile.highest_id(@directory_name)
       if id > 0
         snapshot_file = SnapshotFile.new(@directory_name, id).name
-        open(snapshot_file, "rb") {|snapshot|
+        open(snapshot_file, "rb") do |snapshot|
           system = @marshaller.load(snapshot)
-        }
+        end
       else
         system = new_system_block.call
       end
@@ -224,19 +224,19 @@ module Madeleine
     end
 
     def recover_logs(executer)
-      executer.recovery {
-        CommandLog.log_file_names(@directory_name, FileService.new).each {|file_name|
-          open(@directory_name + File::SEPARATOR + file_name, "rb") {|log|
+      executer.recovery do
+        CommandLog.log_file_names(@directory_name, FileService.new).each do |file_name|
+          open(@directory_name + File::SEPARATOR + file_name, "rb") do |log|
             recover_log(executer, log)
-          }
-        }
-      }
+          end
+        end
+      end
     end
 
     private
 
     def recover_log(executer, log)
-      while ! log.eof?
+      until log.eof?
         command = Marshal.load(log)
         executer.execute(command)
       end
@@ -265,9 +265,10 @@ module Madeleine
       result = file_service.dir_entries(directory_name).select {|name|
         name =~ /^\d{#{FILE_COUNTER_SIZE}}\.command_log$/
       }
-      result.each {|name| name.untaint }
-      result.sort!
-      result
+      result.each do |name|
+        name.untaint
+      end
+      result.sort
     end
 
     def initialize(path, file_service)
@@ -288,13 +289,13 @@ module Madeleine
 
     def self.highest_log(directory_name, file_service)
       highest = 0
-      log_file_names(directory_name, file_service).each {|file_name|
+      log_file_names(directory_name, file_service).each do |file_name|
         match = /^(\d{#{FILE_COUNTER_SIZE}})/.match(file_name)
         n = match[1].to_i
         if n > highest
           highest = n
         end
-      }
+      end
       highest
     end
   end
@@ -316,7 +317,7 @@ module Madeleine
     end
 
     def ensure_directory_exists
-      if ! File.exist?(@directory_name)
+      unless File.exist?(@directory_name)
         FileUtils.mkpath(@directory_name)
       end
     end
@@ -354,10 +355,11 @@ module Madeleine
     private
 
     def delete_log_files
-      Dir.glob(@directory_name + File::SEPARATOR + "*.command_log").each {|name|
+      names = Dir.glob(@directory_name + File::SEPARATOR + "*.command_log")
+      names.each do |name|
         name.untaint
         File.delete(name)
-      }
+      end
     end
 
     def open_new_log
@@ -371,14 +373,14 @@ module Madeleine
       return 0 unless File.exist?(directory_name)
       suffix = "snapshot"
       highest = 0
-      Dir.foreach(directory_name) {|file_name|
+      Dir.foreach(directory_name) do |file_name|
         match = /^(\d{#{FILE_COUNTER_SIZE}}\.#{suffix}$)/.match(file_name)
         next unless match
         n = match[1].to_i
         if n > highest
           highest = n
         end
-      }
+      end
       highest
     end
 
@@ -400,12 +402,12 @@ module Madeleine
     def take(system)
       numbered_file = SnapshotFile.next(@directory_name)
       name = numbered_file.name
-      open(name + '.tmp', 'wb') {|snapshot|
+      open("#{name}.tmp", 'wb') do |snapshot|
         @marshaller.dump(system, snapshot)
         snapshot.flush
         snapshot.fsync
-      }
-      File.rename(name + '.tmp', name)
+      end
+      File.rename("#{name}.tmp", name)
     end
   end
 
@@ -424,4 +426,3 @@ module Madeleine
 end
 
 SnapshotMadeleine = Madeleine::SnapshotMadeleine
-
