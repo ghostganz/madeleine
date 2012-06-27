@@ -14,8 +14,7 @@ module Madeleine
   #
   # Uses <tt>zlib</tt> to do on-the-fly compression/decompression.
   #
-  # ZMarshal works with Ruby's own Marshal and YAML, but not with SOAP
-  # marshalling.
+  # ZMarshal works with Ruby's own Marshal and YAML
   #
   # Usage:
   #
@@ -36,12 +35,7 @@ module Madeleine
     def load(stream)
       zstream = Zlib::GzipReader.new(stream)
       begin
-        # Buffer into a string first, since GzipReader can't handle
-        # Marshal's 0-sized reads and SOAP can't handle streams at all.
-        # In a bright future we can revert to reading directly from the
-        # stream again.
-        buffer = zstream.read
-        return @marshaller.load(buffer)
+        return @marshaller.load(zstream)
       ensure
         zstream.finish
       end

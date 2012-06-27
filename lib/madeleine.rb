@@ -34,7 +34,7 @@ module Madeleine
     # then be restored from the command logs.
     #
     # You can provide your own snapshot marshaller, for instance using
-    # YAML or SOAP, instead of Ruby's built-in marshaller. The
+    # YAML, instead of Ruby's built-in marshaller. The
     # <tt>snapshot_marshaller</tt> must respond to
     # <tt>load(stream)</tt> and <tt>dump(object, stream)</tt>. You
     # must use the same marshaller every time for a system.

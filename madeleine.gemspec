@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.name = 'madeleine'
   s.version = Madeleine::VERSION
   s.platform = Gem::Platform::RUBY
-  s.required_ruby_version = ">= 1.8.1"
+  s.required_ruby_version = ">= 1.8.7"
   s.summary = "Madeleine is a Ruby implementation of Object Prevalence"
   s.require_path = 'lib'
   s.autorequire = 'madeleine'
