@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby -w
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 #
-# Copyright(c) 2003 Håkan Råberg
+# Copyright(c) 2003 HÃ¥kan RÃ¥berg
 #
 # Some components taken from test_persistence.rb
 # Copyright(c) 2003 Anders Bengtsson

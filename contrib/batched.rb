@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 # Batched writes for Madeleine
 #
-# Copyright(c) Håkan Råberg 2003
+# Copyright(c) HÃ¥kan RÃ¥berg 2003
 #
-# 
+#
 # This is an experimental implementation of batched log writes to mininize 
 # calls to fsync. It uses a Shared/Exclusive-Lock, implemented in sync.rb, 
 # which is included in Ruby 1.8.
