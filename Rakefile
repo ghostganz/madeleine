@@ -11,7 +11,7 @@ end
 
 Rake::RDocTask.new do |rd|
   rd.rdoc_files.include("lib/**/*.rb")
-  rd.rdoc_dir = "docs/api"
+  rd.rdoc_dir = "doc/api"
 end
 
 task :default => :test

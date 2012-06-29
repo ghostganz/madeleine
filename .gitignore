@@ -2,7 +2,7 @@
 *~
 
 # Generated docs
-/docs/api
+/doc/api
 
 PrevalenceBase
 *.gem
