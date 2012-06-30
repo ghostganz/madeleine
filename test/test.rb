@@ -1,6 +1,4 @@
 require 'madeleine'
-require 'rubygems'
-gem 'minitest'
 require 'minitest/autorun'
 
 class Append
