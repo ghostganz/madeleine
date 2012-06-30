@@ -1,3 +1,9 @@
+    * Ruby 1.9 compatible (requires at least 1.8.7)
+    * Dropped the 'automatic' feature (Madeleine::Automatic etc)
+    * Dropped support for SOAP marshalling
+    * Removed deprecated classes:
+      - ClockedSnapshotMadeleine
+      - TimeOptimizingLogger
 
 Madeleine 0.7.3 (June 11, 2006):
 
