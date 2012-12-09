@@ -1,4 +1,5 @@
 
+* Update the samples, Ruby doesn't come with Tk any more.
 * Rolling snapshots, with age limit
 * Configurable log marshaller (or use the snapshot marshaller?)
 * Write a document about the different marshallers, for app. developers.
