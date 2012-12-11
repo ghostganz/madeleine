@@ -4,7 +4,6 @@
 * Configurable log marshaller (or use the snapshot marshaller?)
 * Write a document about the different marshallers, for app. developers.
 
-* Replace sillymock.rb with someone else's mock object framework
 * Move all default implementations into a "Default" module
 * Introduce an object representing a log directory
 * Move recovery out of DefaultSnapshotMadeleine entirely
