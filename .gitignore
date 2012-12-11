@@ -1,6 +1,10 @@
 # Emacs cruft
 *~
 
+# IntelliJ stuff
+/.idea
+/*.iml
+
 # Generated docs
 /doc/api
 
