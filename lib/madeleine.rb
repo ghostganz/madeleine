@@ -287,7 +287,10 @@ module Madeleine
     end
 
     def store(command)
-      Marshal.dump(command, @file)
+      # Dumping to intermediate String instead of to IO directly, to make sure
+      # all of the marshalling worked before we write anything to the log.
+      data = Marshal.dump(command)
+      @file.write(data)
       @file.flush
       @file.fsync
     end

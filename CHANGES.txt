@@ -5,6 +5,7 @@
       - ClockedSnapshotMadeleine
       - TimeOptimizingLogger
     * Detects broken custom Marshalling
+    * Prevent Marshalling errors from writing bad log entries
 
 Madeleine 0.7.3 (June 11, 2006):
 

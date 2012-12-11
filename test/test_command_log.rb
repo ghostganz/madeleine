@@ -9,19 +9,19 @@ end
 require 'madeleine'
 require 'stringio'
 
-class ExampleCommand
-  attr :value
-
-  def initialize(value)
-    @value = value
-  end
-
-  def execute(system)
-    system.add(@value)
-  end
-end
-
 class CommandLogTest < MiniTest::Unit::TestCase
+
+  class ExampleCommand
+    attr :value
+
+    def initialize(value)
+      @value = value
+    end
+
+    def execute(system)
+      system.add(@value)
+    end
+  end
 
   def test_file_opening
     file_service = Object.new
@@ -78,5 +78,61 @@ class CommandLogTest < MiniTest::Unit::TestCase
 
     file.verify
     file_service.verify
+  end
+
+  class ExplodingObjectError < RuntimeError
+  end
+
+  class ExplodingObject
+    def marshal_dump
+      raise ExplodingObjectError.new
+    end
+
+    def marshal_load(obj)
+    end
+  end
+
+  class ExplodingCommand
+    def execute(system)
+    end
+
+    def marshal_dump
+      large_string = 'x' * 5000 # Large enough to force write buffer flush
+      [large_string, ExplodingObject.new]
+    end
+
+    def marshal_load(obj)
+    end
+  end
+
+  class FileNotToBeWritten
+    def initialize
+      @anything_written = false
+    end
+
+    def write(arg)
+      @anything_written = true
+    end
+
+    def verify
+      raise "Stuff was written" if @anything_written
+    end
+  end
+
+  def test_failure_during_marshalling_writes_nothing_to_log
+    command = ExplodingCommand.new
+    file = FileNotToBeWritten.new
+
+    file_service = MiniTest::Mock.new
+    file_service.expect(:exist?, true, ["some/path"])
+    file_service.expect(:dir_entries, [], ["some/path"])
+    file_service.expect(:open, file, ["some/path/000000000000000000001.command_log", "wb"])
+
+    target = Madeleine::CommandLog.new("some/path", file_service)
+    assert_raises(ExplodingObjectError) do
+      target.store(command)
+    end
+
+    file.verify
   end
 end
