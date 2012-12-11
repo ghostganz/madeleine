@@ -1,6 +1,6 @@
 #
 # Author::    Anders Bengtsson <ndrsbngtssn@yahoo.se>
-# Copyright:: Copyright (c) 2004
+# Copyright:: Copyright (c) 2004-2012
 #
 
 require 'zlib'
@@ -33,7 +33,7 @@ module Madeleine
     end
 
     def load(stream)
-      zstream = Zlib::GzipReader.new(stream)
+      zstream = WorkaroundGzipReader.new(stream)
       begin
         return @marshaller.load(zstream)
       ensure
@@ -49,6 +49,19 @@ module Madeleine
         zstream.finish
       end
       nil
+    end
+
+    private
+
+    class WorkaroundGzipReader < Zlib::GzipReader
+      # The 'psych' YAML parser, default since Ruby 1.9.3,
+      # assumes that its input IO has an external_encoding()
+      # method.
+      unless defined? external_encoding
+        def external_encoding
+          nil
+        end
+      end
     end
   end
 end

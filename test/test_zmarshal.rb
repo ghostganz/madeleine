@@ -1,4 +1,4 @@
-
+#encoding:utf-8
 require 'madeleine/zmarshal'
 
 require 'stringio'
@@ -8,25 +8,25 @@ class ZMarshalTest < MiniTest::Unit::TestCase
 
   def test_full_circle_marshal
     target = Madeleine::ZMarshal.new(Marshal)
-    object = ["foo", "bar"]
+    object = ["foo", "bar", "räksmörgås", "\xff\xff"]
     stream = StringIO.new
 
     target.dump(object, stream)
     stream.rewind
     result = target.load(stream)
-    
+
     assert_equal(object, result)
   end
 
   def test_full_circle_yaml
     target = Madeleine::ZMarshal.new(YAML)
-    object = ["foo", "bar"]
+    object = ["foo", "bar", "räksmörgås"] # Can't marshal invalid encoding data with YAML, so no "\xff\xff" test
     stream = StringIO.new
 
     target.dump(object, stream)
     stream.rewind
     result = target.load(stream)
-    
+
     assert_equal(object, result)
   end
 
