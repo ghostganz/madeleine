@@ -4,6 +4,7 @@
     * Removed deprecated classes:
       - ClockedSnapshotMadeleine
       - TimeOptimizingLogger
+    * Detects broken custom Marshalling
 
 Madeleine 0.7.3 (June 11, 2006):
 

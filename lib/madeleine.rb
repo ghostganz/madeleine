@@ -148,6 +148,11 @@ module Madeleine
       unless command.respond_to?(:execute)
         raise InvalidCommandException.new("Commands must have an 'execute' method")
       end
+      if command.respond_to?(:marshal_dump)
+        unless command.respond_to?(:marshal_load)
+          raise InvalidCommandException.new("A Command with custom marshalling (mashal_dump()) must also define marshal_load()")
+        end
+      end
     end
   end
 

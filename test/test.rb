@@ -87,15 +87,33 @@ class LoggerTest < MiniTest::Unit::TestCase
 end
 
 class CommandVerificationTest < MiniTest::Unit::TestCase
+  include TestUtils
 
   def teardown
-    Dir.delete("foo")
+    delete_directory("foo")
+    delete_directory("foo2")
   end
 
-  def test_broken_command
+  def test_without_execute_method
     target = SnapshotMadeleine.new("foo") { :a_system }
     assert_raises(Madeleine::InvalidCommandException) do
       target.execute_command(:not_a_command)
+    end
+  end
+
+  class BadCustomMarshalledCommand
+    def execute(system)
+    end
+
+    # Without a corresponding marshal_load()
+    def marshal_dump
+    end
+  end
+
+  def test_bad_custom_marshalling
+    target = SnapshotMadeleine.new("foo2") { :a_system }
+    assert_raises(Madeleine::InvalidCommandException) do
+      target.execute_command(BadCustomMarshalledCommand.new)
     end
   end
 end
