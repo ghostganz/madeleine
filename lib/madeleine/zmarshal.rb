@@ -53,7 +53,7 @@ module Madeleine
 
     private
 
-    class WorkaroundGzipReader < Zlib::GzipReader
+    class WorkaroundGzipReader < Zlib::GzipReader #:nodoc:
       # The 'psych' YAML parser, default since Ruby 1.9.3,
       # assumes that its input IO has an external_encoding()
       # method.
