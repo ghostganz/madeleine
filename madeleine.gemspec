@@ -23,4 +23,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'minitest', '~> 4.3.0'
   s.add_development_dependency 'rake'
   s.add_development_dependency 'rdoc'
+
+  s.rdoc_options.concat %w(--exclude test --exclude sample --exclude contrib)
 end
