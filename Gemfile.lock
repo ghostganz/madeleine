@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    madeleine (0.8.0.pre)
+    madeleine (0.8.0)
 
 GEM
   remote: http://rubygems.org/

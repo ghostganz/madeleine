@@ -1,3 +1,5 @@
+Madeleine 0.8.0 (December 17, 2012):
+
     * Ruby 1.9 compatible (requires at least 1.8.7)
     * Dropped the 'automatic' feature (Madeleine::Automatic etc)
     * Dropped support for SOAP marshalling
