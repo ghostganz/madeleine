@@ -4,16 +4,17 @@
 * Configurable log marshaller (or use the snapshot marshaller?)
 * Write a document about the different marshallers, for app. developers.
 
-* Move all default implementations into a "Default" module
 * Introduce an object representing a log directory
 * Move recovery out of DefaultSnapshotMadeleine entirely
-* Write an example with a web server
+* Write an example with a web server (see madeleine-rack)
 
 * Replace filesystem with mock objects for unit testing.
 * ClockCommand
 * Integrate batched-writes in SnapshotMadeleine
 * More sample code
 * More documentation
-* DRb integration
 * Rollback
-* Handle premature EOF in logs
+* Handle premature EOF in logs (unless we're already there)
+
+* A way to stream larger files into the system, possibly stored
+  within the command log?
