@@ -1,3 +1,4 @@
+#encoding:utf-8
 #
 # Author::    Anders Bengtsson <ndrsbngtssn@yahoo.se>
 # Copyright:: Copyright (c) 2004-2006
@@ -11,7 +12,11 @@ module Madeleine
     include Singleton
 
     def initialize
-      @testdata = "\x85\x00\x0a\0x0d\x0a".freeze
+      @testdata = "\x85\x00\x0a\0x0d\x0a"
+      if @testdata.respond_to?(:force_encoding)
+        @testdata.force_encoding('ASCII-8BIT')
+      end
+      @testdata.freeze
       @was_run = false
     end
 
