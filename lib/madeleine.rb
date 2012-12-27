@@ -215,7 +215,7 @@ module Madeleine
     def recover_logs(executer)
       executer.recovery do
         CommandLog.log_file_names(@directory_name, FileService.new).each do |file_name|
-          open(@directory_name + File::SEPARATOR + file_name, "rb") do |log|
+          open("#{@directory_name}#{File::SEPARATOR}#{file_name}", "rb") do |log|
             recover_log(executer, log)
           end
         end
@@ -239,11 +239,13 @@ module Madeleine
     end
 
     def name
-      result = @path
-      result += File::SEPARATOR
-      result += sprintf("%0#{FILE_COUNTER_SIZE}d", @id)
-      result += '.'
-      result += @name
+      [
+        @path,
+        File::SEPARATOR,
+        sprintf("%0#{FILE_COUNTER_SIZE}d", @id),
+        '.',
+        @name
+      ].join
     end
   end
 
@@ -347,7 +349,7 @@ module Madeleine
     private
 
     def delete_log_files
-      names = Dir.glob(@directory_name + File::SEPARATOR + "*.command_log")
+      names = Dir.glob("#{@directory_name}#{File::SEPARATOR}*.command_log")
       names.each do |name|
         name.untaint
         File.delete(name)
