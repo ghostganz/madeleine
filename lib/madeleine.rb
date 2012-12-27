@@ -50,13 +50,12 @@ module Madeleine
                           log_factory)
       snapshotter = Snapshotter.new(directory_name,
                                     snapshot_marshaller)
-      lock = DefaultLock.new
       recoverer = Recoverer.new(directory_name,
                                 snapshot_marshaller)
       system = recoverer.recover_snapshot(new_system_block)
       executer = Executer.new(system)
       recoverer.recover_logs(executer)
-      DefaultSnapshotMadeleine.new(system, logger, snapshotter, lock, executer)
+      DefaultSnapshotMadeleine.new(system, logger, snapshotter, executer)
     end
   end
 
@@ -65,13 +64,13 @@ module Madeleine
     # The prevalent system
     attr_reader :system
 
-    def initialize(system, logger, snapshotter, lock, executer)
+    def initialize(system, logger, snapshotter, executer)
       SanityCheck.instance.run_once
 
       @system = system
       @logger = logger
       @snapshotter = snapshotter
-      @lock = lock
+      @lock = Sync.new
       @executer = executer
 
       @closed = false
@@ -103,7 +102,7 @@ module Madeleine
     #
     # * <tt>query</tt> - The query command to execute
     def execute_query(query)
-      @lock.synchronize_shared do
+      @lock.synchronize(:SH) do
         @executer.execute(query)
       end
     end
@@ -167,21 +166,6 @@ module Madeleine
   #
 
   FILE_COUNTER_SIZE = 21 #:nodoc:
-
-  class DefaultLock #:nodoc:
-
-    def initialize
-      @lock = Sync.new
-    end
-
-    def synchronize(&block)
-      @lock.synchronize(&block)
-    end
-
-    def synchronize_shared(&block)
-      @lock.synchronize(:SH, &block)
-    end
-  end
 
   class Executer #:nodoc:
 

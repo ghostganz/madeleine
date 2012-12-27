@@ -296,8 +296,8 @@ class SharedLockQueryTest < MiniTest::Unit::TestCase
 
     $shared = false
     $was_shared = false
-    def lock.synchronize_shared(&block)
-      $shared = true
+    def lock.synchronize(shared = nil, &block)
+      $shared = (shared == :SH)
       block.call
       $shared = false
     end
