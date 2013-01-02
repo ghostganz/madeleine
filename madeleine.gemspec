@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.files = Dir.glob("lib/**/*.rb") +
     Dir.glob("samples/**/*.rb") +
     Dir.glob("contrib/**/*.rb") +
-    ['README', 'CHANGES.txt', 'COPYING']
+    ['README.md', 'CHANGES.txt', 'COPYING']
 
   s.add_development_dependency 'minitest', '~> 4.3.0'
   s.add_development_dependency 'rake'

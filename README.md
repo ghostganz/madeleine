@@ -1,11 +1,13 @@
+# Madeleine
 
 Madeleine is a Ruby implementation of transparent persistence of business
 objects using command logging and complete system snapshots.
 
 https://github.com/ghostganz/madeleine
 
-Usage:
+### Usage
 
+```
     require 'madeleine'
 
     # Create an application as a prevalent system
@@ -50,21 +52,22 @@ Usage:
     # logic.
 
     madeleine.take_snapshot
+```
 
-Requirements:
+### Requirements
 
     * Ruby 1.8.7 or later
 
-Contact:
+### Contact
 
     Homepage:
     https://github.com/ghostganz/madeleine
 
-License:
+### License
 
     BSD (see the file COPYING)
 
-Credits:
+### Credits
 
     Anders Bengtsson   -   Prevalence core impl.
     Stephen Sykes      -   Automatic commands impl.
