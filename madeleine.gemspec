@@ -15,6 +15,9 @@ Gem::Specification.new do |s|
   s.email = "ndrsbngtssn@yahoo.se"
   s.homepage = "http://github.com/ghostganz/madeleine"
 
+  s.signing_key = File.expand_path('~/.ssh/gem-private_key.pem')
+  s.cert_chain = ['.public_cert.pem']
+
   s.files = Dir.glob("lib/**/*.rb") +
     Dir.glob("samples/**/*.rb") +
     Dir.glob("contrib/**/*.rb") +
