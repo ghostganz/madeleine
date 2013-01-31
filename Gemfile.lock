@@ -6,9 +6,9 @@ PATH
 GEM
   remote: http://rubygems.org/
   specs:
-    json (1.7.5)
-    minitest (4.3.3)
-    rake (10.0.2)
+    json (1.7.6)
+    minitest (4.5.0)
+    rake (10.0.3)
     rdoc (3.12)
       json (~> 1.4)
 
@@ -17,6 +17,6 @@ PLATFORMS
 
 DEPENDENCIES
   madeleine!
-  minitest (~> 4.3.0)
+  minitest (~> 4.5.0)
   rake
   rdoc
