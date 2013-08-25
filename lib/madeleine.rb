@@ -168,15 +168,21 @@ module Madeleine
   FILE_COUNTER_SIZE = 21 #:nodoc:
 
   class Executer #:nodoc:
+    NO_CONTEXT = Object.new
 
-    def initialize(system)
+    def initialize(system, context = NO_CONTEXT)
       @system = system
+      @context = context
       @in_recovery = false
     end
 
     def execute(command)
       begin
-        command.execute(@system)
+        if @context == NO_CONTEXT
+          command.execute(@system)
+        else
+          command.execute(@system, @context)
+        end
       rescue
         raise unless @in_recovery
       end

@@ -14,14 +14,28 @@ class ExecuterTest < MiniTest::Unit::TestCase
     system = Object.new
     command = self
     executer = Madeleine::Executer.new(system)
-    @executed_with = nil
+    @executed_with_system = nil
+    @executed_with_context = nil
     executer.execute(command)
-    assert_same(system, @executed_with)
+    assert_same(system, @executed_with_system)
   end
 
   # Self-shunt
-  def execute(system)
-    @executed_with = system
+  def execute(system, context = :no_context)
+    @executed_with_system = system
+    @executed_with_context = context
+  end
+
+  def test_executer_with_context
+    system = Object.new
+    context = :custom_context
+    command = self
+    executer = Madeleine::Executer.new(system, context)
+    @executed_with_system = nil
+    @executed_with_context = nil
+    executer.execute(command)
+    assert_same(system, @executed_with_system)
+    assert_same(context, @executed_with_context)
   end
 
   def test_execute_with_exception
