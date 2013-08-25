@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.required_ruby_version = ">= 1.8.7"
   s.require_path = 'lib'
 
-  s.author = "Anders Bengtsson"
+  s.author = "Anders Kindberg (Bengtsson)"
   s.email = "ndrsbngtssn@yahoo.se"
   s.homepage = "http://github.com/ghostganz/madeleine"
 
