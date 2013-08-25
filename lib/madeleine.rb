@@ -43,26 +43,29 @@ module Madeleine
     #
     # * <tt>directory_name</tt> - Storage directory to use. Will be created if needed.
     # * <tt>options</tt> - Options hash:
-    #      * <tt>:snapshot_marshaller</tt>  - Marshaller to use for system snapshots (defaults to Marshal)
+    #      * <tt>:snapshot_marshaller</tt> - Marshaller to use for system snapshots (defaults to Marshal)
+    #      * <tt>:execution_context</tt> - Optional context to be passed to commands' execute() method as a second parameter
     # * <tt>new_system_block</tt> - Block to create a new system (if no stored system was found).
     def self.new(directory_name, options = {}, &new_system_block)
-      snapshot_marshaller = Marshal
       if options.kind_of? Hash
-        snapshot_marshaller = options[:snapshot_marshaller] if options[:snapshot_marshaller]
+        options = {
+          :snapshot_marshaller => Marshal,
+          :execution_context => nil
+        }.merge(options)
       else
         # Backwards compat.
-        snapshot_marshaller = options
+        options = {:snapshot_marshaller => options}
       end
 
       log_factory = DefaultLogFactory.new
       logger = Logger.new(directory_name,
                           log_factory)
       snapshotter = Snapshotter.new(directory_name,
-                                    snapshot_marshaller)
+                                    options[:snapshot_marshaller])
       recoverer = Recoverer.new(directory_name,
-                                snapshot_marshaller)
+                                options[:snapshot_marshaller])
       system = recoverer.recover_snapshot(new_system_block)
-      executer = Executer.new(system)
+      executer = Executer.new(system, options[:execution_context])
       recoverer.recover_logs(executer)
       DefaultSnapshotMadeleine.new(system, logger, snapshotter, executer)
     end
@@ -177,9 +180,7 @@ module Madeleine
   FILE_COUNTER_SIZE = 21 #:nodoc:
 
   class Executer #:nodoc:
-    NO_CONTEXT = Object.new
-
-    def initialize(system, context = NO_CONTEXT)
+    def initialize(system, context = nil)
       @system = system
       @context = context
       @in_recovery = false
@@ -187,10 +188,10 @@ module Madeleine
 
     def execute(command)
       begin
-        if @context == NO_CONTEXT
-          command.execute(@system)
-        else
+        if @context
           command.execute(@system, @context)
+        else
+          command.execute(@system)
         end
       rescue
         raise unless @in_recovery
