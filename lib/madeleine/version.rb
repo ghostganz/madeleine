@@ -1,3 +1,3 @@
 module Madeleine
-  VERSION = "0.8.1.pre"
+  VERSION = "0.9.0.pre"
 end
