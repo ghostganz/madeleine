@@ -18,3 +18,10 @@
 
 * A way to stream larger files into the system, possibly stored
   within the command log?
+
+* Context on executer
+  DONE On executer itself
+  * Optional context on Madeleine init
+    DONE Hash:ify Madeleine init options
+
+* .ruby-version file

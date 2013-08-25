@@ -42,9 +42,18 @@ module Madeleine
     # See: DefaultSnapshotMadeleine
     #
     # * <tt>directory_name</tt> - Storage directory to use. Will be created if needed.
-    # * <tt>snapshot_marshaller</tt> - Marshaller to use for system snapshots. (Optional)
+    # * <tt>options</tt> - Options hash:
+    #      * <tt>:snapshot_marshaller</tt>  - Marshaller to use for system snapshots (defaults to Marshal)
     # * <tt>new_system_block</tt> - Block to create a new system (if no stored system was found).
-    def self.new(directory_name, snapshot_marshaller=Marshal, &new_system_block)
+    def self.new(directory_name, options = {}, &new_system_block)
+      snapshot_marshaller = Marshal
+      if options.kind_of? Hash
+        snapshot_marshaller = options[:snapshot_marshaller] if options[:snapshot_marshaller]
+      else
+        # Backwards compat.
+        snapshot_marshaller = options
+      end
+
       log_factory = DefaultLogFactory.new
       logger = Logger.new(directory_name,
                           log_factory)
