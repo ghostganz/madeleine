@@ -1,3 +1,4 @@
+    * Support for optional "execution context" passed to commands.
     * Ruby 2.0 fix for self-tests.
 
 Madeleine 0.8.0 (December 17, 2012):

@@ -54,6 +54,20 @@ madeleine.execute_command(command)
 madeleine.take_snapshot
 ```
 
+# A Madeleine instance can be create with an execution context, that will
+# be passed to all commands as a second argument. This is useful for passing
+# in things that are neither persistent nor global, e.g. the current Rack application.
+madeleine = SnapshotMadeleine.new("my_example_storage", execution_context: rack_app) {
+  Hash.new
+}
+
+class WebRelatedCommand
+  def execute(system, context)
+    # The context will now be the Rack application
+    ...
+  end
+end
+
 ### Requirements
 
 * Ruby 1.8.7 or later
