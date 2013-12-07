@@ -7,7 +7,7 @@ GEM
   remote: http://rubygems.org/
   specs:
     json (1.8.1)
-    minitest (4.3.3)
+    minitest (5.1.0)
     rake (10.1.0)
     rdoc (4.0.1)
       json (~> 1.4)
@@ -17,6 +17,6 @@ PLATFORMS
 
 DEPENDENCIES
   madeleine!
-  minitest (~> 4.3.0)
+  minitest
   rake
   rdoc

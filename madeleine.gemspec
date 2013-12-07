@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
     Dir.glob("contrib/**/*.rb") +
     ['README.md', 'CHANGES.txt', 'COPYING']
 
-  s.add_development_dependency 'minitest', '~> 4.3.0'
+  s.add_development_dependency 'minitest'
   s.add_development_dependency 'rake'
   s.add_development_dependency 'rdoc'
 

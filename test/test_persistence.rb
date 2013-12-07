@@ -38,7 +38,7 @@ class Addition
 end
 
 
-class PersistenceTest < MiniTest::Unit::TestCase
+class PersistenceTest < Minitest::Test
 
   def setup
     @madeleine = nil

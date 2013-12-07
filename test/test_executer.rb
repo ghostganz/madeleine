@@ -8,7 +8,7 @@ end
 
 require 'madeleine'
 
-class ExecuterTest < MiniTest::Unit::TestCase
+class ExecuterTest < Minitest::Test
 
   def test_executer
     system = Object.new

@@ -24,7 +24,7 @@ module TestUtils
   end
 end
 
-class SnapshotMadeleineTest < MiniTest::Unit::TestCase
+class SnapshotMadeleineTest < Minitest::Test
   include TestUtils
 
   def teardown
@@ -44,7 +44,7 @@ class SnapshotMadeleineTest < MiniTest::Unit::TestCase
   end
 end
 
-class NumberedFileTest < MiniTest::Unit::TestCase
+class NumberedFileTest < Minitest::Test
 
   def test_main
     target = Madeleine::NumberedFile.new(File::SEPARATOR + "foo", "bar", 321)
@@ -55,7 +55,7 @@ class NumberedFileTest < MiniTest::Unit::TestCase
 end
 
 
-class LoggerTest < MiniTest::Unit::TestCase
+class LoggerTest < Minitest::Test
   include TestUtils
 
   def teardown
@@ -86,7 +86,7 @@ class LoggerTest < MiniTest::Unit::TestCase
   end
 end
 
-class CommandVerificationTest < MiniTest::Unit::TestCase
+class CommandVerificationTest < Minitest::Test
   include TestUtils
 
   def teardown
@@ -119,7 +119,7 @@ class CommandVerificationTest < MiniTest::Unit::TestCase
 end
 
 
-class CustomMarshallerTest < MiniTest::Unit::TestCase
+class CustomMarshallerTest < Minitest::Test
   include TestUtils
 
   def teardown
@@ -165,7 +165,7 @@ class ErrorRaisingCommand
   end
 end
 
-class ErrorHandlingTest < MiniTest::Unit::TestCase
+class ErrorHandlingTest < Minitest::Test
   include TestUtils
 
   def teardown
@@ -187,7 +187,7 @@ class ErrorHandlingTest < MiniTest::Unit::TestCase
   end
 end
 
-class QueryTest < MiniTest::Unit::TestCase
+class QueryTest < Minitest::Test
   include TestUtils
 
   def teardown
@@ -213,7 +213,7 @@ class QueryTest < MiniTest::Unit::TestCase
 end
 
 
-class TimeOptimizingLoggerTest < MiniTest::Unit::TestCase
+class TimeOptimizingLoggerTest < Minitest::Test
   include TestUtils
 
   def setup
@@ -278,7 +278,7 @@ class TimeOptimizingLoggerTest < MiniTest::Unit::TestCase
 end
 
 
-class SharedLockQueryTest < MiniTest::Unit::TestCase
+class SharedLockQueryTest < Minitest::Test
   include TestUtils
 
   def prevalence_base
@@ -311,7 +311,7 @@ class SharedLockQueryTest < MiniTest::Unit::TestCase
 end
 
 
-class SantiyCheckTest < MiniTest::Unit::TestCase
+class SantiyCheckTest < Minitest::Test
 
   def test_sanity_check
     target = Madeleine::SanityCheck.instance

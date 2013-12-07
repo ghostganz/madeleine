@@ -16,7 +16,7 @@ class ClockedAddingSystem
   end
 end
 
-class TimeTest < MiniTest::Unit::TestCase
+class TimeTest < Minitest::Test
 
   def test_clock
     target = Madeleine::Clock::Clock.new

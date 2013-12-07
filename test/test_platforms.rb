@@ -3,13 +3,13 @@ class AddCommand
   def initialize(obj)
     @obj = obj
   end
-  
+
   def execute(system)
     system[@obj.myid] = @obj
   end
 end
 
-class Foo  
+class Foo
   attr_accessor :myid
 end
 
@@ -19,7 +19,7 @@ end
 #
 # Test case provided by Steve Conover.
 
-class WierdWin32CorruptionTest < MiniTest::Unit::TestCase
+class WierdWin32CorruptionTest < Minitest::Test
   include TestUtils
 
   def teardown
@@ -30,7 +30,7 @@ class WierdWin32CorruptionTest < MiniTest::Unit::TestCase
 
   def doCorruptionTest(idstr, storagenumber)
     m = SnapshotMadeleine.new("corruption_test" + storagenumber) { Hash.new() }
-  
+
     f = Foo.new()
     f.myid = idstr
 
@@ -42,15 +42,15 @@ class WierdWin32CorruptionTest < MiniTest::Unit::TestCase
   def testErrorOne
     doCorruptionTest("123456789012345678901", "1")
   end
-  
+
   def testErrorTwo
     doCorruptionTest("aaaaaaaaaaaaaaaaaaaaa", "2")
   end
-  
+
   def testNoErrorOne
     doCorruptionTest("12345678901234567890", "3")
   end
-  
+
   def testNoErrorTwo
     doCorruptionTest("1234567890123456789012", "4")
   end

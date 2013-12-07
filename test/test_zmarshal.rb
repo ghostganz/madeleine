@@ -4,7 +4,7 @@ require 'madeleine/zmarshal'
 require 'stringio'
 require 'yaml'
 
-class ZMarshalTest < MiniTest::Unit::TestCase
+class ZMarshalTest < Minitest::Test
 
   def test_full_circle_marshal
     target = Madeleine::ZMarshal.new(Marshal)

@@ -9,7 +9,7 @@ end
 require 'madeleine'
 require 'stringio'
 
-class CommandLogTest < MiniTest::Unit::TestCase
+class CommandLogTest < Minitest::Test
 
   class ExampleCommand
     attr :value
