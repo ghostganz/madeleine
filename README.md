@@ -52,7 +52,6 @@ madeleine.execute_command(command)
 # logic.
 
 madeleine.take_snapshot
-```
 
 # A Madeleine instance can be create with an execution context, that will
 # be passed to all commands as a second argument. This is useful for passing
@@ -67,6 +66,7 @@ class WebRelatedCommand
     ...
   end
 end
+```
 
 ### Requirements
 
