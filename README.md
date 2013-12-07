@@ -82,8 +82,7 @@ BSD (see the file ```COPYING```)
 
 ### Credits
 
-Anders Bengtsson   -   Prevalence core impl.
-Stephen Sykes      -   Automatic commands impl.
+Anders Kindberg (Bengtsson) - Prevalence core impl.
 
 Madeleine's design is based on Prevayler, the original Java
 prevalence layer.
@@ -91,7 +90,7 @@ prevalence layer.
 With the help of patches, testing and feedback from:
 
 Steve Conover, David Heinemeier Hansson, Johan Lind, Håkan Råberg,
-IIMA Susumu, Martin Tampe and Jon Tirsén
+IIMA Susumu, Stephen Sykes, Martin Tampe and Jon Tirsén
 
 Thanks to Klaus Wuestefeld and the Prevayler developers for the
 model of this software; to Minero Aoki for the installer; to Matz and
