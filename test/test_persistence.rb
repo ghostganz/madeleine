@@ -1,6 +1,6 @@
 #!/usr/local/bin/ruby -w
 #
-# Copyright(c) 2003 Anders Bengtsson
+# Copyright(c) 2003 Anders Kindberg
 #
 # PersistenceTest is based on the unit tests from Prevayler,
 # Copyright(c) 2001-2003 Klaus Wuestefeld.

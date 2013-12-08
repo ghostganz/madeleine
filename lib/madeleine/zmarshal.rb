@@ -1,5 +1,5 @@
 #
-# Author::    Anders Bengtsson <ndrsbngtssn@yahoo.se>
+# Author::    Anders Kindberg <ndrsbngtssn@yahoo.se>
 # Copyright:: Copyright (c) 2004-2012
 #
 

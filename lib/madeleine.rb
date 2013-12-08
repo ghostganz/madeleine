@@ -1,8 +1,8 @@
 #
 # Madeleine - Ruby Object Prevalence
 #
-# Author::    Anders Bengtsson <ndrsbngtssn@yahoo.se>
-# Copyright:: Copyright (c) 2003-2012
+# Author::    Anders Kindberg <ndrsbngtssn@yahoo.se>
+# Copyright:: Copyright (c) 2003-2013
 #
 # Usage:
 #

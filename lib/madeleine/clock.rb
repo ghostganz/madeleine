@@ -1,5 +1,5 @@
 #
-# Copyright(c) Anders Bengtsson 2003
+# Copyright(c) Anders Kindberg 2003
 #
 
 require 'madeleine'
