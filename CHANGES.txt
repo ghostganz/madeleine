@@ -1,3 +1,5 @@
+    * Add in_recovery?() query (for advanced users only)
+
 Madeleine 0.9.0 (December 7, 2013):
     * Support for optional "execution context" passed to commands.
     * Ruby 2.0 fix for self-tests.

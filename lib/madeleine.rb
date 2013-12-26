@@ -153,6 +153,13 @@ module Madeleine
       end
     end
 
+    # Check if system is being recovered
+    #
+    # Normal users should not care about this.
+    def in_recovery?
+      @executer.in_recovery?
+    end
+
     private
 
     def verify_command_sane(command)
@@ -184,6 +191,10 @@ module Madeleine
       @system = system
       @context = context
       @in_recovery = false
+    end
+
+    def in_recovery?
+      @in_recovery
     end
 
     def execute(command)
