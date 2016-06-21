@@ -6,10 +6,10 @@ PATH
 GEM
   remote: http://rubygems.org/
   specs:
-    json (1.8.1)
+    json (1.8.3)
     minitest (5.1.0)
     rake (10.1.0)
-    rdoc (4.0.1)
+    rdoc (4.2.2)
       json (~> 1.4)
 
 PLATFORMS
@@ -20,3 +20,6 @@ DEPENDENCIES
   minitest
   rake
   rdoc
+
+BUNDLED WITH
+   1.12.5
